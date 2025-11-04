@@ -5,6 +5,7 @@ import path from "path";
 import webpack from "webpack";
 import WatchMessagePlugin from "./WatchMessagePlugin";
 import CopyLawtextFilesPlugin from "./CopyLawtextFilesPlugin";
+import GenerateLawListPlugin from "./GenerateLawListPlugin";
 // import QueryDocsPlugin from "./QueryDocsPlugin";  // Commented out as query docs require external API
 
 const rootDir = path.dirname(__dirname);
@@ -100,6 +101,7 @@ export default (env: Record<string, string>, argv: Record<string, string>): webp
             }),
             // new QueryDocsPlugin(),  // Commented out as query docs require external API
             new CopyLawtextFilesPlugin(),
+            new GenerateLawListPlugin(),
         ],
 
         watchOptions: {
