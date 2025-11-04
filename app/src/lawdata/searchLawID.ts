@@ -1,5 +1,4 @@
 import type { LawInfo } from "lawtext/dist/src/data/lawinfo";
-import levenshtein from "js-levenshtein";
 import { storedLoader } from "./loaders";
 
 export const searchLawID = async (lawSearchKey: string): Promise<string | {error: string, message: string} | null> => {
@@ -11,31 +10,23 @@ export const searchLawID = async (lawSearchKey: string): Promise<string | {error
 
 const getLawIDStored = async (lawSearchKey: string): Promise<string | null> => {
     try {
-        // console.log(`getLawIDStored("${lawSearchKey}")`);
-
         const { lawInfos } = await storedLoader.loadLawInfosStruct();
 
-        let partMatchMode = false;
-        const bestMatch = { score: Infinity, info: null as LawInfo | null };
+        // Simple exact match or contains search
+        for (const info of lawInfos) {
+            if (info.LawTitle === lawSearchKey || info.LawNum === lawSearchKey || info.LawID === lawSearchKey) {
+                return info.LawID;
+            }
+        }
+        
+        // If no exact match, try partial match
         for (const info of lawInfos) {
             if (info.LawTitle.includes(lawSearchKey)) {
-                if (!partMatchMode) {
-                    partMatchMode = true;
-                    bestMatch.score = Infinity;
-                    bestMatch.info = null;
-                }
-            } else {
-                if (partMatchMode) continue;
-            }
-            // eslint-disable-next-line no-irregular-whitespace
-            const score = levenshtein(info.LawTitle.replace(/　抄$/, ""), lawSearchKey);
-            if (score < bestMatch.score) {
-                bestMatch.score = score;
-                bestMatch.info = info;
+                return info.LawID;
             }
         }
 
-        return bestMatch.info && bestMatch.info.LawID;
+        return null;
     } catch {
         return null;
     }
