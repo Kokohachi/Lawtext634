@@ -30,11 +30,12 @@ export const renderDocxAsync = async (bodyEL: React.JSX.Element, docxOptions?: D
             }
 
             if ("file" in figData) {
+                const pdfOLE = makePDFOLE(figData.file.blob.buf);
                 embeddings.push({
                     Id: figData.file.rId,
                     Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject",
                     fileName: `${figData.file.name}.bin`,
-                    buf: makePDFOLE(figData.file.blob.buf),
+                    buf: pdfOLE.buffer.slice(pdfOLE.byteOffset, pdfOLE.byteOffset + pdfOLE.byteLength),
                 });
                 types.set("bin", "application/vnd.openxmlformats-officedocument.oleObject");
                 if (!media.find(m => m.Id === figDataManager.pdfIcon.rId)) {

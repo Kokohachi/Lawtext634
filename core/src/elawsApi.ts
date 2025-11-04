@@ -125,7 +125,8 @@ export class ElawsLawData extends LawXMLStruct {
             this._pict = new Map();
             const zipData = await unzip(this.imageData);
             for (const relPath in zipData) {
-                const buf = zipData[relPath];
+                const uint8Data = zipData[relPath];
+                const buf = uint8Data.buffer.slice(uint8Data.byteOffset, uint8Data.byteOffset + uint8Data.byteLength) as ArrayBuffer;
                 const ext = path.extname(relPath) as keyof typeof pictMimeDict;
                 const type = ext in pictMimeDict ? pictMimeDict[ext] : "application/octet-stream";
                 // const blob = new Blob([buf], { type });

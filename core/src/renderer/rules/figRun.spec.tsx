@@ -145,7 +145,10 @@ describe("Test DOCX figRun", () => {
                             cy: 77 * 9525,
                             name: "image.jpg",
                             blob: {
-                                buf: decodeBase64(FILES["./pict/image.jpg"]),
+                                buf: (() => {
+                                    const u8 = decodeBase64(FILES["./pict/image.jpg"]);
+                                    return u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength) as ArrayBuffer;
+                                })(),
                                 type: "image/jpeg",
                             },
                         },
@@ -205,7 +208,10 @@ describe("Test DOCX figRun", () => {
                             cy: 100 * 9525,
                             name: "object.pdf",
                             blob: {
-                                buf: decodeBase64(FILES["./pict/object.pdf"]),
+                                buf: (() => {
+                                    const u8 = decodeBase64(FILES["./pict/object.pdf"]);
+                                    return u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength) as ArrayBuffer;
+                                })(),
                                 type: "application/pdf",
                             },
                         },
@@ -292,7 +298,11 @@ describe("Test DOCX figRun", () => {
                     {
                         src: "./pict/object.pdf",
                         type: "renderedPDF",
-                        pages: (await pdfToPNG(decodeBase64(FILES["./pict/object.pdf"]))).map(({ buf, pageNumber }, i) => ({
+                        pages: (await (async () => {
+                            const u8 = decodeBase64(FILES["./pict/object.pdf"]);
+                            const arrayBuf = u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength) as ArrayBuffer;
+                            return await pdfToPNG(arrayBuf);
+                        })()).map(({ buf, pageNumber }, i) => ({
                             id: 1000000 + i,
                             rId: `fig${1 + i}`,
                             cx: 5364000,
