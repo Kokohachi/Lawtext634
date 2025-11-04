@@ -6,6 +6,8 @@ import webpack from "webpack";
 import type webpack_dev_server from "webpack-dev-server";
 import WatchMessagePlugin from "./WatchMessagePlugin";
 import CreateAppZipPlugin from "./CreateAppZipPlugin";
+import CopyLawtextFilesPlugin from "./CopyLawtextFilesPlugin";
+import GenerateLawListPlugin from "./GenerateLawListPlugin";
 // import QueryDocsPlugin from "./QueryDocsPlugin";  // Commented out as query docs require external API
 import fs from "fs";
 import { ensureDirSync } from "fs-extra";
@@ -144,6 +146,8 @@ export default (env: Record<string, string>, argv: Record<string, string>): webp
                         });
                     }
                 })(),
+                new CopyLawtextFilesPlugin(),
+                new GenerateLawListPlugin(),
             ]),
         ],
 
