@@ -4,7 +4,7 @@ import CssMinimizerPlugin from "css-minimizer-webpack-plugin";
 import path from "path";
 import webpack from "webpack";
 import WatchMessagePlugin from "./WatchMessagePlugin";
-import QueryDocsPlugin from "./QueryDocsPlugin";
+// import QueryDocsPlugin from "./QueryDocsPlugin";  // Commented out as query docs require external API
 
 const rootDir = path.dirname(__dirname);
 
@@ -93,7 +93,7 @@ export default (env: Record<string, string>, argv: Record<string, string>): webp
                 template: path.resolve(rootDir, "./src/index.ejs"),
                 filename: "index.html",
             }),
-            new QueryDocsPlugin(),
+            // new QueryDocsPlugin(),  // Commented out as query docs require external API
         ],
 
         watchOptions: {

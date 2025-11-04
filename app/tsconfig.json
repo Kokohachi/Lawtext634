@@ -42,4 +42,8 @@
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
     },
+    "exclude": [
+        "node_modules",
+        "src/query-docs"
+    ]
 }
