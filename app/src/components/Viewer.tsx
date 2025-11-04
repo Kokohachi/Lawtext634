@@ -133,7 +133,7 @@ const ViewerWelcome: React.FC<LawtextAppPageStateStruct> = props => {
                     </div>
                     <div className="text-muted" style={{ marginTop: "1em" }}>
                         <ul style={{ marginBottom: 0 }}>
-                            <li>規約・細則・規程・規則をLawtext形式で作成・編集できます。</li>
+                            <li>規約、細則、規程、規則をLawtext形式で作成・編集できます。</li>
                             <li><a className="link-secondary" href="#" onClick={downloadSampleLawtextOnClick}>サンプルをダウンロード</a></li>
                         </ul>
                     </div>
@@ -313,6 +313,12 @@ data
      ├─ 規則_20240101.law.txt
      └─ all_law_list.csv (オプション)
 `}</pre>
+                            <div style={{ marginLeft: "1em", marginTop: "0.5em", fontSize: "0.95em" }}>
+                                <strong>all_law_list.csv（オプション）について:</strong> このファイルは、表示・検索する規約の一覧をカスタマイズしたい場合に使用します。<br />
+                                CSV形式で、各行に規約名や公布日などを記載してください。<br />
+                                例: <code>規約名,公布日,ファイル名</code> のような列を持つCSVファイルです。<br />
+                                通常は不要ですが、特定の規約のみを表示したい場合などにご利用ください。
+                            </div>
                         </li>
 
                         {state.csvExists ? (<>

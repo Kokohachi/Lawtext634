@@ -12,21 +12,20 @@ const getLawIDStored = async (lawSearchKey: string): Promise<string | null> => {
     try {
         const { lawInfos } = await storedLoader.loadLawInfosStruct();
 
-        // Simple exact match or contains search
+        // Single loop: check exact match first, track first partial match
+        let firstPartialMatch: string | null = null;
         for (const info of lawInfos) {
+            // Exact match - return immediately
             if (info.LawTitle === lawSearchKey || info.LawNum === lawSearchKey || info.LawID === lawSearchKey) {
                 return info.LawID;
             }
-        }
-        
-        // If no exact match, try partial match
-        for (const info of lawInfos) {
-            if (info.LawTitle.includes(lawSearchKey)) {
-                return info.LawID;
+            // Partial match - track first occurrence
+            if (!firstPartialMatch && info.LawTitle.includes(lawSearchKey)) {
+                firstPartialMatch = info.LawID;
             }
         }
 
-        return null;
+        return firstPartialMatch;
     } catch {
         return null;
     }
