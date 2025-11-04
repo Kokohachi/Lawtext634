@@ -640,23 +640,33 @@ const LawListDisplay: React.FC<LawListDisplayProps> = ({ navigate }) => {
         category: string;
     }>>([]);
     const [loading, setLoading] = React.useState(true);
+    const [error, setError] = React.useState<string | null>(null);
 
     React.useEffect(() => {
         (async () => {
             try {
                 const lawInfosStruct = await storedLoader.loadLawInfosStruct();
+                
+                // Category configuration with matching patterns
+                const categoryPatterns = [
+                    { name: "規約", patterns: ["規約"] },
+                    { name: "細則", patterns: ["細則"] },
+                    { name: "規程", patterns: ["規程"] },
+                    { name: "規則", patterns: ["規則"] },
+                ];
+                
                 const laws = lawInfosStruct.lawInfos.map(info => {
-                    // Categorize based on LawNum or LawTitle
+                    // Find matching category
                     let category = "その他";
-                    if (info.LawNum.includes("規約") || info.LawTitle.includes("規約")) {
-                        category = "規約";
-                    } else if (info.LawNum.includes("細則") || info.LawTitle.includes("細則")) {
-                        category = "細則";
-                    } else if (info.LawNum.includes("規程") || info.LawTitle.includes("規程")) {
-                        category = "規程";
-                    } else if (info.LawNum.includes("規則") || info.LawTitle.includes("規則")) {
-                        category = "規則";
+                    for (const { name, patterns } of categoryPatterns) {
+                        if (patterns.some(pattern => 
+                            info.LawNum.includes(pattern) || info.LawTitle.includes(pattern)
+                        )) {
+                            category = name;
+                            break;
+                        }
                     }
+                    
                     return {
                         LawID: info.LawID,
                         LawNum: info.LawNum,
@@ -666,8 +676,9 @@ const LawListDisplay: React.FC<LawListDisplayProps> = ({ navigate }) => {
                 });
                 setLawInfos(laws);
                 setLoading(false);
-            } catch (error) {
-                console.error("Failed to load law list:", error);
+            } catch (err) {
+                console.error("Failed to load law list:", err);
+                setError("規約一覧の読み込みに失敗しました");
                 setLoading(false);
             }
         })();
@@ -683,11 +694,21 @@ const LawListDisplay: React.FC<LawListDisplayProps> = ({ navigate }) => {
         );
     }
 
+    if (error) {
+        return (
+            <LawListDiv>
+                <div style={{ padding: "1em", textAlign: "center", color: "#d9534f" }}>
+                    {error}
+                </div>
+            </LawListDiv>
+        );
+    }
+
     // Group laws by category
     const categories = ["規約", "細則", "規程", "規則", "その他"];
     const groupedLaws = categories.map(category => ({
         category,
-        laws: lawInfos.filter(law => law.category === category),
+        laws: lawInfos.filter(lawInfo => lawInfo.category === category),
     })).filter(group => group.laws.length > 0);
 
     return (
@@ -695,17 +716,17 @@ const LawListDisplay: React.FC<LawListDisplayProps> = ({ navigate }) => {
             {groupedLaws.map(({ category, laws }) => (
                 <React.Fragment key={category}>
                     <LawCategoryTitle>{category}</LawCategoryTitle>
-                    {laws.map(law => (
+                    {laws.map(lawInfo => (
                         <LawListItem
-                            key={law.LawID}
-                            href={`#/${law.LawID}`}
+                            key={lawInfo.LawID}
+                            href={`#/${lawInfo.LawID}`}
                             onClick={(e) => {
                                 e.preventDefault();
-                                navigate(`/${law.LawID}`);
+                                navigate(`/${lawInfo.LawID}`);
                             }}
-                            title={law.LawTitle}
+                            title={lawInfo.LawTitle}
                         >
-                            {law.LawTitle}
+                            {lawInfo.LawTitle}
                         </LawListItem>
                     ))}
                 </React.Fragment>
