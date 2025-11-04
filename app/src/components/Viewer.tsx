@@ -5,7 +5,6 @@ import { LawView } from "./LawView";
 import type { ResolvedType } from "lawtext/dist/src/util";
 import { saveListJson } from "@appsrc/lawdata/saveListJson";
 import { ensureFetch, storedLoader } from "@appsrc/lawdata/loaders";
-import { openFile } from "@appsrc/actions/openFile";
 import { ErrorCatcher } from "./LawView/ErrorCatcher";
 import useSearchInput from "./useSearchInput";
 
@@ -83,11 +82,6 @@ const ViewerWelcome: React.FC<LawtextAppPageStateStruct> = props => {
         };
     }, [searchInputRef]);
 
-    const downloadSampleLawtextOnClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-        e.preventDefault();
-        navigate("/(sample)");
-    };
-
     return (
         <ViewerWelcomeDiv>
             <div className="container-fluid" style={{ marginBottom: "2em" }}>
@@ -95,7 +89,7 @@ const ViewerWelcome: React.FC<LawtextAppPageStateStruct> = props => {
                     Lawtext634へようこそ！
                 </p>
                 <p style={{ fontSize: "1.2em", textAlign: "center", color: "rgb(100, 100, 100)" }}>
-                    武蔵高等学校中学校校友会 規約管理システム
+                    武蔵高等学校中学校校友会 規約類閲覧システム
                 </p>
             </div>
 
@@ -123,18 +117,9 @@ const ViewerWelcome: React.FC<LawtextAppPageStateStruct> = props => {
             <div className="container-fruid" style={{ alignSelf: "center", maxWidth: "500px" }}>
 
                 <div>
-                    <div style={{ textAlign: "center" }}>
-                        <button
-                            onClick={openFile}
-                            className="lawtext-open-file-button btn btn-outline-secondary"
-                        >
-                            規約XML または Lawtext を開く
-                        </button>
-                    </div>
                     <div className="text-muted" style={{ marginTop: "1em" }}>
                         <ul style={{ marginBottom: 0 }}>
-                            <li>規約、細則、規程、規則をLawtext形式で作成・編集できます。</li>
-                            <li><a className="link-secondary" href="#" onClick={downloadSampleLawtextOnClick}>サンプルをダウンロード</a></li>
+                            <li>規約、細則、規程、規則を検索・閲覧できます</li>
                         </ul>
                     </div>
                 </div>

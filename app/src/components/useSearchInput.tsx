@@ -29,7 +29,7 @@ export const useSearchInput = (options: {searchInputStyle?: React.CSSProperties}
             style={{
                 ...options.searchInputStyle,
             }}
-            placeholder="規約名か規約番号を検索" aria-label="規約名か規約番号を検索"
+            placeholder="規約類名で検索" aria-label="規約類名で検索"
             value={editingKey}
         />);
 
