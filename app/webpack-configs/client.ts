@@ -6,7 +6,7 @@ import webpack from "webpack";
 import type webpack_dev_server from "webpack-dev-server";
 import WatchMessagePlugin from "./WatchMessagePlugin";
 import CreateAppZipPlugin from "./CreateAppZipPlugin";
-import QueryDocsPlugin from "./QueryDocsPlugin";
+// import QueryDocsPlugin from "./QueryDocsPlugin";  // Commented out as query docs require external API
 import fs from "fs";
 import { ensureDirSync } from "fs-extra";
 import TerserPlugin from "terser-webpack-plugin";
@@ -122,7 +122,7 @@ export default (env: Record<string, string>, argv: Record<string, string>): webp
                 template: path.resolve(rootDir, "./src/index.ejs"),
                 filename: "index.html",
             }),
-            ...(env.DEV_SERVER ? [] : [new QueryDocsPlugin()]),
+            // ...(env.DEV_SERVER ? [] : [new QueryDocsPlugin()]),  // Commented out as query docs require external API
             ...(env.DEV_SERVER ? [] : [new CreateAppZipPlugin()]),
             ...(env.DEV_SERVER ? [] : [
                 new (class {

@@ -6,7 +6,7 @@
 import * as temp_law from "@appsrc/actions/temp_law";
 import * as coreQuery from "./coreQuery";
 import * as law_util from "@appsrc/law_util";
-import { elawsLoader, storedLoader } from "@appsrc/lawdata/loaders";
+import { storedLoader } from "@appsrc/lawdata/loaders";
 import type { LawInfo } from "lawtext/dist/src/data/lawinfo";
 import * as _lawUtil from "lawtext/dist/src/law/std";
 import type { Loader } from "lawtext/dist/src/data/loaders/common";
@@ -44,29 +44,12 @@ export const getLawtextAppUrl = (lawOrLawNum: string | LawInfo, lawtextAppRoot?:
  * @returns - フィルタを適用した{@link LawQuery}。
  */
 export const query = (criteria: coreQuery.LawCriteria | null = null, options?: coreQuery.QueryOptions): coreQuery.LawQuery => {
-    if (location.hostname === "yamachig.github.io") {
-        console.error("lawtext.query() はダウンロード版Lawtextでオフライン用データを使用する場合に利用できます。Web版では lawtext.queryViaAPI() を使用してください。ダウンロード版Lawtextはこちら：");
-        console.error("https://yamachig.github.io/lawtext-app/#/download/");
-    } else {
-        storedLoader.listJsonExists().then(exists => {
-            if (!exists) {
-                console.error("list.jsonが見つかりません。オフライン用データが保存されているかどうかご確認ください。");
-            }
-        });
-    }
+    storedLoader.listJsonExists().then(exists => {
+        if (!exists) {
+            console.error("list.jsonが見つかりません。オフライン用データが保存されているかどうかご確認ください。");
+        }
+    });
     return queryWithLoader(storedLoader, criteria, options);
-};
-
-/**
- * e-Gov 法令APIを用いてLawtext queryを実行します。
- * @param criteria - 法令のフィルタに用いる {@link LawCriteriaArgs}。`null` を設定するとフィルタを行わず全ての項目を列挙します。
- * @param options - {@link Query} のオプション項目。
- * @returns - フィルタを適用した{@link Query}。
- */
-export const queryViaAPI = (criteria: coreQuery.LawCriteria | null = null, options?: coreQuery.QueryOptions): coreQuery.LawQuery => {
-    console.warn("クエリの実行に e-Gov 法令API を使用します。時間がかかる場合があります。ダウンロード版Lawtextでオフライン用データを使用することをご検討ください。ダウンロード版Lawtextはこちら：");
-    console.warn("https://yamachig.github.io/lawtext-app/#/download/");
-    return queryWithLoader(elawsLoader, criteria, options);
 };
 
 export const queryWithLoader = (

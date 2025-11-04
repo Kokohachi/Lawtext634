@@ -1,17 +1,17 @@
 {
-    "name": "lawtext-app",
+    "name": "lawtext634-app",
     "version": "0.0.1",
-    "description": "",
-    "homepage": "https://github.com/yamachig/lawtext#readme",
+    "description": "Student council regulations management system for Musashi High School and Junior High School Alumni Association",
+    "homepage": "https://github.com/Kokohachi/Lawtext634#readme",
     "bugs": {
-        "url": "https://github.com/yamachig/lawtext/issues"
+        "url": "https://github.com/Kokohachi/Lawtext634/issues"
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/yamachig/lawtext.git"
+        "url": "git+https://github.com/Kokohachi/Lawtext634.git"
     },
     "license": "MIT",
-    "author": "yamachi",
+    "author": "Kokohachi",
     "directories": {
         "test": "test"
     },
@@ -77,8 +77,6 @@
         "buffer": "^6.0.3",
         "file-saver": "^2.0.5",
         "fs-extra": "^11.3.0",
-        "fuse.js": "^7.1.0",
-        "js-levenshtein": "^1.1.6",
         "lawtext": "file:../core",
         "node-fetch": "^3.3.2",
         "react": "^19.0.0",

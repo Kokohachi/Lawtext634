@@ -1,9 +1,6 @@
-
-import { FetchElawsLoader } from "lawtext/dist/src/data/loaders/FetchElawsLoader";
 import { FetchStoredLoader } from "lawtext/dist/src/data/loaders/FetchStoredLoader";
 
 const _dataPath = "./data";
-export const elawsLoader = new FetchElawsLoader();
 export const storedLoader = new FetchStoredLoader(_dataPath);
 
 export const ensureFetch = async (): Promise<{isFile: boolean, canFetch: boolean}> => {

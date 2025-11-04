@@ -1,0 +1,17 @@
+node_modules
+*.log
+.env
+.DS_Store
+*.pyc
+__pycache__
+venv*
+.vscode
+dist
+dist-dev
+__tmp__*
+coverage
+docs
+*.cache
+cache.sqlite
+out*
+debug.log
