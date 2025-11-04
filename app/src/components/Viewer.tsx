@@ -6,7 +6,6 @@ import type { ResolvedType } from "lawtext/dist/src/util";
 import { saveListJson } from "@appsrc/lawdata/saveListJson";
 import { ensureFetch, storedLoader } from "@appsrc/lawdata/loaders";
 import { ErrorCatcher } from "./LawView/ErrorCatcher";
-import useSearchInput from "./useSearchInput";
 
 
 const ViewerMessagesDiv = styled.div`
@@ -50,31 +49,9 @@ const ViewerWelcomeDiv = styled.div`
 `;
 
 const ViewerWelcome: React.FC<LawtextAppPageStateStruct> = props => {
-    const { navigate } = props;
-
-    const {
-        editingKey,
-        searchInputRef,
-        searchInput,
-        searchDropdown,
-    } = useSearchInput({
-        onSelect: (lawID: string) => {
-            navigate(`/${lawID}`);
-        },
-    });
-
-    const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        navigate(`/${editingKey.replace("/", "")}`);
-    };
-
     const [fetchAbility, setFetchAbility] = React.useState<ResolvedType<ReturnType<typeof ensureFetch>> | null>(null);
 
     useEffect(() => {
-        const input = searchInputRef.current;
-        if (input) {
-            input.focus();
-        }
         let unmounted = false;
         (async () => {
             const ffa = await ensureFetch();
@@ -84,7 +61,7 @@ const ViewerWelcome: React.FC<LawtextAppPageStateStruct> = props => {
         return () => {
             unmounted = true;
         };
-    }, [searchInputRef]);
+    }, []);
 
     return (
         <ViewerWelcomeDiv>
@@ -98,20 +75,9 @@ const ViewerWelcome: React.FC<LawtextAppPageStateStruct> = props => {
             </div>
 
             <div className="container-fluid" style={{ marginBottom: "2em" }}>
-
-                <div className="row justify-content-center search-law-block">
-                    <div className="col-md-6" style={{ maxWidth: "500px" }}>
-                        <form onSubmit={handleSearchSubmit}>
-                            <div className="input-group" style={{ position: "relative" }}>
-                                {searchInput}
-                                <button className="btn btn-primary search-law-button" type="submit" >
-                                    検索
-                                </button>
-                            </div>
-                            {searchDropdown}
-                        </form>
-                    </div>
-                </div>
+                <p style={{ fontSize: "1.2em", textAlign: "center", color: "rgb(100, 100, 100)" }}>
+                    サイドバーから規約類を検索できます
+                </p>
             </div>
 
             <div className="container-fluid" style={{ alignSelf: "center", maxWidth: "20em", margin: "0.5em" }}>
