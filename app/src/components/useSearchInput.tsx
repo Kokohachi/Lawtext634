@@ -32,6 +32,10 @@ const DropdownItem = styled.div<{ $isSelected: boolean }>`
     text-overflow: ellipsis;
 `;
 
+const BLUR_DELAY_MS = 200;
+const DEBOUNCE_DELAY_MS = 300;
+const MAX_SUGGESTIONS = 10;
+
 interface LawSuggestion {
     LawID: string;
     LawTitle: string;
@@ -44,6 +48,7 @@ export const useSearchInput = (options: {
 
     const searchInputRef = React.useRef<HTMLInputElement>(null);
     const dropdownRef = React.useRef<HTMLDivElement>(null);
+    const lawInfosCacheRef = React.useRef<Array<{LawID: string, LawNum: string, LawTitle: string}> | null>(null);
 
     const [editingKey, setEditingKey] = React.useState("");
     const [searchFocused, setSearchFocused] = React.useState<"on" | "leaving" | "off">("off");
@@ -51,39 +56,52 @@ export const useSearchInput = (options: {
     const [selectedIndex, setSelectedIndex] = React.useState(-1);
     const [showDropdown, setShowDropdown] = React.useState(false);
 
-    // Load suggestions based on input
+    // Load law data once and cache it
     React.useEffect(() => {
-        const loadSuggestions = async () => {
+        const loadLawData = async () => {
+            if (lawInfosCacheRef.current === null) {
+                try {
+                    const { lawInfos } = await storedLoader.loadLawInfosStruct();
+                    lawInfosCacheRef.current = lawInfos;
+                } catch (error) {
+                    console.error("Failed to load law data:", error);
+                }
+            }
+        };
+        loadLawData();
+    }, []);
+
+    // Load suggestions based on input with debounce
+    React.useEffect(() => {
+        const timer = setTimeout(() => {
             if (editingKey.trim().length === 0) {
                 setSuggestions([]);
                 setShowDropdown(false);
                 return;
             }
 
-            try {
-                const { lawInfos } = await storedLoader.loadLawInfosStruct();
-                const filtered = lawInfos
-                    .filter(info => 
-                        info.LawTitle.includes(editingKey) || 
-                        info.LawNum.includes(editingKey)
-                    )
-                    .slice(0, 10) // Limit to 10 suggestions
-                    .map(info => ({
-                        LawID: info.LawID,
-                        LawTitle: info.LawTitle,
-                    }));
-
-                setSuggestions(filtered);
-                setShowDropdown(filtered.length > 0 && searchFocused === "on");
-                setSelectedIndex(-1);
-            } catch (error) {
-                console.error("Failed to load suggestions:", error);
-                setSuggestions([]);
-                setShowDropdown(false);
+            if (lawInfosCacheRef.current === null) {
+                return;
             }
-        };
 
-        loadSuggestions();
+            const searchLower = editingKey.toLowerCase();
+            const filtered = lawInfosCacheRef.current
+                .filter(info => 
+                    info.LawTitle.toLowerCase().includes(searchLower) || 
+                    info.LawNum.toLowerCase().includes(searchLower)
+                )
+                .slice(0, MAX_SUGGESTIONS)
+                .map(info => ({
+                    LawID: info.LawID,
+                    LawTitle: info.LawTitle,
+                }));
+
+            setSuggestions(filtered);
+            setShowDropdown(filtered.length > 0 && searchFocused === "on");
+            setSelectedIndex(-1);
+        }, DEBOUNCE_DELAY_MS);
+
+        return () => clearTimeout(timer);
     }, [editingKey, searchFocused]);
 
     const lawSearchKeyOnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -160,7 +178,7 @@ export const useSearchInput = (options: {
                         setSearchFocused("off");
                         setShowDropdown(false);
                     }
-                }, 200);
+                }, BLUR_DELAY_MS);
             }}
             className="form-control search-law-textbox"
             style={{
