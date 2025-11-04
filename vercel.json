@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "name": "lawtext634",
+  "buildCommand": "cd app && npm install && npm run build:prod",
+  "outputDirectory": "app/dist-prod",
+  "framework": null,
+  "installCommand": "cd core && npm install && cd ../app && npm install",
+  "devCommand": "cd app && npm run serve",
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
+}

@@ -8,13 +8,6 @@ export const isStoredLawDataProps = (props: LawDataProps):
     props is StoredLawDataProps =>
     props.source === "stored";
 
-export interface ElawsLawDataProps extends BaseXMLLawDataProps {
-    source: "elaws",
-}
-export const isElawsLawDataProps = (props: LawDataProps):
-    props is ElawsLawDataProps =>
-    props.source === "elaws";
-
 export interface TempXMLLawDataProps extends BaseXMLLawDataProps {
     source: "temp_xml",
 }
@@ -43,6 +36,6 @@ export const isFileLawtextLawDataProps = (props: LawDataProps):
     props is FileLawtextLawDataProps =>
     props.source === "file_lawtext";
 
-export type LawDataProps = StoredLawDataProps | ElawsLawDataProps | TempXMLLawDataProps | FileXMLLawDataProps | TempLawtextLawDataProps | FileLawtextLawDataProps;
+export type LawDataProps = StoredLawDataProps | TempXMLLawDataProps | FileXMLLawDataProps | TempLawtextLawDataProps | FileLawtextLawDataProps;
 
 export type LawData = LawDataProps & LawDataCore;

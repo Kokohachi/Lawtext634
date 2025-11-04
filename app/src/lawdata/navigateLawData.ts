@@ -1,6 +1,6 @@
 import { getTempLaw } from "../actions/temp_law";
-import type { ElawsLawDataProps, StoredLawDataProps, TempXMLLawDataProps, TempLawtextLawDataProps } from "./common";
-import { elawsLoader, storedLoader } from "./loaders";
+import type { StoredLawDataProps, TempXMLLawDataProps, TempLawtextLawDataProps } from "./common";
+import { storedLoader } from "./loaders";
 import { searchLawID } from "./searchLawID";
 import * as util from "lawtext/dist/src/util";
 import type { LawDataResult, Timing } from "lawtext/dist/src/data/lawdata";
@@ -13,7 +13,7 @@ export const navigateLawData = async (
     pathStr: string,
     onMessage: (message: string) => unknown,
     timing: Timing,
-): Promise<{redirectPath: string} | LawDataResult<TempXMLLawDataProps | TempLawtextLawDataProps | StoredLawDataProps | ElawsLawDataProps>> => {
+): Promise<{redirectPath: string} | LawDataResult<TempXMLLawDataProps | TempLawtextLawDataProps | StoredLawDataProps>> => {
 
     const firstPart = pathStr.split("/", 1)[0];
 
@@ -127,25 +127,8 @@ export const navigateLawData = async (
         //
     }
 
-    try {
-        onMessage("e-Gov 法令APIから法令XMLを取得しています...");
-        console.log(`navigateLawData: fetching law data via e-LAWS API for "${lawIDOrLawNum}"...`);
-        const [loadDataTime, lawXMLStruct] = await util.withTime(elawsLoader.loadLawXMLStructByInfo.bind(storedLoader))(lawIDOrLawNum);
-        timing.loadData = loadDataTime;
-
-        onMessage("法令XMLをパースしています...");
-        // console.log("navigateLawData: parsing law xml...");
-        await util.wait(30);
-        return toLawData({
-            source: "elaws",
-            xml: lawXMLStruct.xml,
-            lawXMLStruct,
-        }, onMessage, timing);
-
-    } catch (error) {
-        return {
-            ok: false,
-            error: error as Error,
-        };
-    }
+    return {
+        ok: false,
+        error: new Error(`「${lawIDOrLawNum}」の法令データが見つかりませんでした。ローカルに保存された法令データのみ参照可能です。`),
+    };
 };

@@ -76,7 +76,7 @@ const SidebarHead: React.FC<LawtextAppPageStateStruct> = props => {
             <div className="container-fluid">
                 <SidebarH1>
                     <a href={location.protocol + "//" + location.host + location.pathname + location.search}
-                        style={{ color: "inherit" }}>Lawtext</a>
+                        style={{ color: "inherit" }}>Lawtext634</a>
                 </SidebarH1>
 
                 {!origState.loadingLaw &&
@@ -87,7 +87,7 @@ const SidebarHead: React.FC<LawtextAppPageStateStruct> = props => {
                             className="list-group-item  list-group-item-action"
                             style={{ fontSize: "0.8em", padding: "0.5em" }}
                         >
-                            法令ファイルを開く
+                            規約ファイルを開く
                         </button>
 
                         <form
@@ -634,19 +634,19 @@ const SidebarFooter: React.FC = () => {
     return (
         <SidebarFooterDiv>
             <div style={{ fontSize: "0.8em", padding: "0.3em 0.3em 0 0.3em", color: "rgb(140, 140, 140)", lineHeight: "1em" }}>
-                法令検索・元データは<a href="https://laws.e-gov.go.jp/" target="_blank" rel="noreferrer">e-Gov法令検索</a>・<a href="https://laws.e-gov.go.jp/apitop/" target="_blank" rel="noreferrer">法令API</a>を使用しています。定義語・条項参照などの表示は<a href="https://github.com/yamachig/lawtext" target="_blank" rel="noreferrer">Lawtext</a>で別途解析・編集したものです。
+                武蔵高等学校中学校校友会の規約類を管理するシステムです。Lawtextフォーマットを使用しています。
             </div>
             <div style={{ fontSize: "0.8em", textAlign: "center", padding: "0.3em 0", color: "rgb(140, 140, 140)" }}>
                 <span style={{ marginRight: "1em" }}>
-                    <a href="https://github.com/yamachig/lawtext" target="_blank" rel="noreferrer">
+                    <a href="https://github.com/Kokohachi/Lawtext634" target="_blank" rel="noreferrer">
                         GitHub
                     </a>
                     ・
                     <a href="https://yamachig.github.io/Lawtext/" target="_blank" rel="noreferrer">
-                        Docs
+                        Lawtext Docs
                     </a>
                 </span>
-                &copy; 2017-{new Date().getFullYear()} yamachi
+                Powered by Lawtext &copy; 2017-{new Date().getFullYear()} yamachi
             </div>
         </SidebarFooterDiv >
     );

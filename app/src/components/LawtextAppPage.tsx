@@ -55,7 +55,7 @@ export const LawtextAppPage: React.FC = () => {
     const { navigate, path, origSetState } = stateStruct;
 
     React.useEffect(() => {
-        document.title = "Lawtext";
+        document.title = "Lawtext634";
     }, []);
 
     const [prevPath, setPrevPath] = useState("");
