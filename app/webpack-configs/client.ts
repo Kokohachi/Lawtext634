@@ -144,6 +144,26 @@ export default (env: Record<string, string>, argv: Record<string, string>): webp
                         });
                     }
                 })(),
+                new (class {
+                    public apply(compiler: webpack.Compiler): void {
+                        compiler.hooks.afterEmit.tapPromise("CopyLawtextFilesPlugin", async () => {
+                            const targetDir = path.join(compiler.outputPath, "data", "lawdata");
+                            ensureDirSync(targetDir);
+                            const sourceDir = path.resolve(rootDir, "../sample_regulations");
+                            
+                            // Copy all .law.txt files from sample_regulations to dist-prod/data/lawdata
+                            const files = fs.readdirSync(sourceDir);
+                            for (const file of files) {
+                                if (file.endsWith(".law.txt")) {
+                                    const sourcePath = path.join(sourceDir, file);
+                                    const targetPath = path.join(targetDir, file);
+                                    fs.copyFileSync(sourcePath, targetPath);
+                                    console.log(`Copied ${file} to ${targetDir}`);
+                                }
+                            }
+                        });
+                    }
+                })(),
             ]),
         ],
 

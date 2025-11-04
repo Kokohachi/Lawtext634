@@ -76,17 +76,16 @@ vercel
 
 ### 4. 規約データの追加
 
-ビルド後、以下のディレクトリに規約ファイルを配置：
+**注意**: ビルド時に`sample_regulations/`ディレクトリ内のすべての`.law.txt`ファイルが自動的に`app/dist-prod/data/lawdata/`にコピーされます。Vercelへのデプロイ時も自動的にファイルが含まれます。
+
+手動で規約ファイルを追加・更新する場合は、`sample_regulations/`ディレクトリに`.law.txt`ファイルを配置してから、ビルドを実行してください：
 
 ```bash
-app/dist-prod/data/lawdata/
+# 1. sample_regulations/ に .law.txt ファイルを追加
+# 2. ビルドを実行
+npm run build:prod
+# 3. dist-prod/data/lawdata/ に自動的にコピーされます
 ```
-
-ファイル名の例：
-- `規約_20240101.law.txt`
-- `細則_20240401.law.txt`
-- `規程_20240701.law.txt`
-- `規則_20241001.law.txt`
 
 ## Lawtext形式の例
 
