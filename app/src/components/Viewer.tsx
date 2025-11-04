@@ -57,7 +57,11 @@ const ViewerWelcome: React.FC<LawtextAppPageStateStruct> = props => {
         searchInputRef,
         searchInput,
         searchDropdown,
-    } = useSearchInput({});
+    } = useSearchInput({
+        onSelect: (lawID: string) => {
+            navigate(`/${lawID}`);
+        },
+    });
 
     const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -98,7 +102,7 @@ const ViewerWelcome: React.FC<LawtextAppPageStateStruct> = props => {
                 <div className="row justify-content-center search-law-block">
                     <div className="col-md-6" style={{ maxWidth: "500px" }}>
                         <form onSubmit={handleSearchSubmit}>
-                            <div className="input-group">
+                            <div className="input-group" style={{ position: "relative" }}>
                                 {searchInput}
                                 <button className="btn btn-primary search-law-button" type="submit" >
                                     検索
