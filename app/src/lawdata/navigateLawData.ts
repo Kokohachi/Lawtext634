@@ -9,6 +9,9 @@ import { lawNumLikeToLawNum, ptnLawNumLike } from "lawtext/dist/src/law/lawNum";
 import parsePath from "lawtext/dist/src/path/v1/parse";
 import { parseLawIDOrLawRevID } from "lawtext/dist/src/law/lawID";
 
+// Regex pattern to detect XML format (XML declaration or Law element)
+const XML_FORMAT_REGEX = /^(?:<\?xml|<Law)/;
+
 export const navigateLawData = async (
     pathStr: string,
     onMessage: (message: string) => unknown,
@@ -19,7 +22,7 @@ export const navigateLawData = async (
 
     const text = getTempLaw(firstPart);
     if (text !== null) {
-        if (/^(?:<\?xml|<Law)/.test(text.trim())) {
+        if (XML_FORMAT_REGEX.test(text.trim())) {
             onMessage("法令XMLをパースしています...");
             // console.log("navigateLawData: parsing law xml...");
             await util.wait(30);
@@ -96,9 +99,16 @@ export const navigateLawData = async (
             };
         }
 
-        return {
-            redirectPath: [`v1:${lawIDResult}`, ...pathStr.split("/").slice(1)].join("/"),
-        };
+        // For local files that don't have real law IDs (e.g., using base64 IDs),
+        // try to parse as law ID first. If it fails, use the ID directly without v1: prefix.
+        if (parseLawIDOrLawRevID(lawIDResult)) {
+            return {
+                redirectPath: [`v1:${lawIDResult}`, ...pathStr.split("/").slice(1)].join("/"),
+            };
+        } else {
+            // Use the ID directly for local files
+            lawIDOrLawNum = lawIDResult;
+        }
     }
 
 
@@ -114,15 +124,29 @@ export const navigateLawData = async (
         const [loadDataTime, lawXMLStruct] = lawInfo && await util.withTime(storedLoader.loadLawXMLStructByInfo.bind(storedLoader))(lawInfo);
         timing.loadData = loadDataTime;
 
-        onMessage("法令XMLをパースしています...");
-        // console.log("navigateLawData: parsing law xml...");
-        await util.wait(30);
-        return toLawData({
-            source: "stored",
-            xml: lawXMLStruct.xml,
-            lawPath: lawInfo.Path,
-            lawXMLStruct,
-        }, onMessage, timing);
+        // Check if the file is Lawtext format (not XML)
+        const isLawtextFile = lawInfo.XmlName.endsWith(".law.txt");
+        const text = lawXMLStruct.xml;
+        
+        if (isLawtextFile || !XML_FORMAT_REGEX.test(text.trim())) {
+            onMessage("Lawtextをパースしています...");
+            // console.log("navigateLawData: parsing lawtext...");
+            await util.wait(30);
+            return toLawData({
+                source: "temp_lawtext",
+                lawtext: text,
+            }, onMessage, timing);
+        } else {
+            onMessage("法令XMLをパースしています...");
+            // console.log("navigateLawData: parsing law xml...");
+            await util.wait(30);
+            return toLawData({
+                source: "stored",
+                xml: text,
+                lawPath: lawInfo.Path,
+                lawXMLStruct,
+            }, onMessage, timing);
+        }
     } catch {
         //
     }
