@@ -8,6 +8,9 @@
   "devCommand": "cd app && npm run serve",
   "routes": [
     {
+      "handle": "filesystem"
+    },
+    {
       "src": "/(.*)",
       "dest": "/index.html"
     }

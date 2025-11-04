@@ -23,6 +23,7 @@ export default (env: Record<string, string>, argv: Record<string, string>): webp
         output: {
             filename: "[name].js",
             path: env.DEV_SERVER ? "/" : distDir,
+            publicPath: "/",
             clean: true,
         },
         resolve: {

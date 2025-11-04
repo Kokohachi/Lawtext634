@@ -18,6 +18,7 @@ export default (env: Record<string, string>, argv: Record<string, string>): webp
         output: {
             filename: "[name].js",
             path: distDir,
+            publicPath: "/",
             clean: true,
         },
         resolve: {
@@ -29,6 +30,9 @@ export default (env: Record<string, string>, argv: Record<string, string>): webp
                 "fs": false,
                 "cli-progress": false,
                 "string_decoder": false,
+                "lawtext/dist/src/law/getLawList": path.resolve(rootDir, "./webpack-configs/getLawList.js"),
+                "../law/getLawList": path.resolve(rootDir, "./webpack-configs/getLawList.js"),
+                "./lawList.json": false,
             },
             fallback: {
                 "path": require.resolve("path-browserify"),
