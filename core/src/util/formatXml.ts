@@ -197,8 +197,8 @@ const processProcessingInstruction = (node: XmlParserProcessingInstructionNode, 
         newLine(state);
     }
     appendContent(state, "<?" + node.name);
-    if ("attributes" in node && node.attributes) {
-        processAttributes(state, node.attributes as Record<string, string>);
+    if ("content" in node && node.content) {
+        appendContent(state, " " + node.content);
     }
     appendContent(state, "?>");
 };

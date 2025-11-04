@@ -76,11 +76,14 @@ export interface FigDataManagerOptions {
 }
 
 export class FigDataManager implements DOCXFigDataManager {
-    pdfIcon = {
-        rId: "rPdfIcon",
-        buf: decodeBase64(pdfIconBinaryBase64).buffer.slice(0) as ArrayBuffer,
-        fileName: "pdfIcon.emf",
-    };
+    pdfIcon = (() => {
+        const uint8Data = decodeBase64(pdfIconBinaryBase64);
+        return {
+            rId: "rPdfIcon",
+            buf: uint8Data.buffer.slice(uint8Data.byteOffset, uint8Data.byteOffset + uint8Data.byteLength) as ArrayBuffer,
+            fileName: "pdfIcon.emf",
+        };
+    })();
     constructor(
         public figDataMap: Map<string, DOCXFigData>,
     ) { }
