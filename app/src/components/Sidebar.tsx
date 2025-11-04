@@ -5,7 +5,6 @@ import { assertNever } from "lawtext/dist/src/util";
 import type { EL } from "lawtext/dist/src/node/el";
 import type { LawtextAppPageStateStruct } from "./LawtextAppPageState";
 import { downloadDocx as origDownloadDocx, downloadLawtext, downloadXml } from "../actions/download";
-import { openFile } from "@appsrc/actions/openFile";
 import { scrollToLawAnchor } from "@appsrc/actions/scroll";
 import type { Container } from "lawtext/dist/src/node/container";
 import makePath from "lawtext/dist/src/path/v1/make";
@@ -13,6 +12,7 @@ import type { NavigateFunction } from "react-router-dom";
 import getOnMessage from "../actions/getOnMessage";
 import type { FigDataManagerOptions } from "lawtext/dist/src/renderer/common/docx/FigDataManager";
 import useSearchInput from "./useSearchInput";
+import { storedLoader } from "@appsrc/lawdata/loaders";
 
 
 const SidebarH1 = styled.h1`
@@ -82,14 +82,6 @@ const SidebarHead: React.FC<LawtextAppPageStateStruct> = props => {
                 {!origState.loadingLaw &&
 
                     <div className="list-group" style={{ textAlign: "center" }}>
-                        <button
-                            onClick={openFile}
-                            className="list-group-item  list-group-item-action"
-                            style={{ fontSize: "0.8em", padding: "0.5em" }}
-                        >
-                            規約ファイルを開く
-                        </button>
-
                         <form
                             className="list-group-item "
                             style={{ fontSize: "0.8em", padding: 0 }}
@@ -600,6 +592,128 @@ const LawBody: React.FC<{el: std.LawBody} & TOCItemPropsForPath> = props => {
     );
 };
 
+// Component to display all laws categorized by type
+const LawListDiv = styled.div`
+    flex-grow: 1;
+    flex-basis: 0;
+    overflow-y: auto;
+    border-top: 1px solid #d6d6d6;
+    border-bottom: 1px solid #d6d6d6;
+    padding: 0.4rem 0;
+    font-size: 0.75em;
+`;
+
+const LawCategoryTitle = styled.div`
+    font-weight: bold;
+    padding: 0.5em 1em;
+    background-color: rgba(200, 200, 200, 0.3);
+    margin-top: 0.5em;
+    &:first-child {
+        margin-top: 0;
+    }
+`;
+
+const LawListItem = styled.a`
+    display: block;
+    padding: 0.4em 1.5em;
+    color: currentColor;
+    text-decoration: none;
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    &:hover {
+        background-color: rgba(255, 255, 255, .8);
+        color: currentColor;
+    }
+`;
+
+interface LawListDisplayProps {
+    navigate: NavigateFunction;
+}
+
+const LawListDisplay: React.FC<LawListDisplayProps> = ({ navigate }) => {
+    const [lawInfos, setLawInfos] = React.useState<Array<{
+        LawID: string;
+        LawNum: string;
+        LawTitle: string;
+        category: string;
+    }>>([]);
+    const [loading, setLoading] = React.useState(true);
+
+    React.useEffect(() => {
+        (async () => {
+            try {
+                const lawInfosStruct = await storedLoader.loadLawInfosStruct();
+                const laws = lawInfosStruct.lawInfos.map(info => {
+                    // Categorize based on LawNum or LawTitle
+                    let category = "その他";
+                    if (info.LawNum.includes("規約") || info.LawTitle.includes("規約")) {
+                        category = "規約";
+                    } else if (info.LawNum.includes("細則") || info.LawTitle.includes("細則")) {
+                        category = "細則";
+                    } else if (info.LawNum.includes("規程") || info.LawTitle.includes("規程")) {
+                        category = "規程";
+                    } else if (info.LawNum.includes("規則") || info.LawTitle.includes("規則")) {
+                        category = "規則";
+                    }
+                    return {
+                        LawID: info.LawID,
+                        LawNum: info.LawNum,
+                        LawTitle: info.LawTitle,
+                        category,
+                    };
+                });
+                setLawInfos(laws);
+                setLoading(false);
+            } catch (error) {
+                console.error("Failed to load law list:", error);
+                setLoading(false);
+            }
+        })();
+    }, []);
+
+    if (loading) {
+        return (
+            <LawListDiv>
+                <div style={{ padding: "1em", textAlign: "center" }}>
+                    読み込み中...
+                </div>
+            </LawListDiv>
+        );
+    }
+
+    // Group laws by category
+    const categories = ["規約", "細則", "規程", "規則", "その他"];
+    const groupedLaws = categories.map(category => ({
+        category,
+        laws: lawInfos.filter(law => law.category === category),
+    })).filter(group => group.laws.length > 0);
+
+    return (
+        <LawListDiv>
+            {groupedLaws.map(({ category, laws }) => (
+                <React.Fragment key={category}>
+                    <LawCategoryTitle>{category}</LawCategoryTitle>
+                    {laws.map(law => (
+                        <LawListItem
+                            key={law.LawID}
+                            href={`#/${law.LawID}`}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                navigate(`/${law.LawID}`);
+                            }}
+                            title={law.LawTitle}
+                        >
+                            {law.LawTitle}
+                        </LawListItem>
+                    ))}
+                </React.Fragment>
+            ))}
+        </LawListDiv>
+    );
+};
+
 const NavBlock: React.FC<{law: std.Law | null} & TOCItemPropsForPath> = props => {
     if (props.law) {
         const lawBody = props.law.children.find((el) => el.tag === "LawBody") as std.LawBody;
@@ -616,9 +730,15 @@ const NavBlock: React.FC<{law: std.Law | null} & TOCItemPropsForPath> = props =>
 
 const SidebarBody: React.FC<{law: std.Law | null} & TOCItemPropsForPath> = props => {
     const MemoNavBlock = React.useMemo(() => React.memo(NavBlock), []);
+    const MemoLawListDisplay = React.useMemo(() => React.memo(LawListDisplay), []);
+    
     return (
         <SidebarBodyDiv>
-            <MemoNavBlock {...props} law={props.law} />
+            {props.law ? (
+                <MemoNavBlock {...props} law={props.law} />
+            ) : (
+                <MemoLawListDisplay navigate={props.navigate} />
+            )}
         </SidebarBodyDiv>
     );
 };
@@ -634,7 +754,7 @@ const SidebarFooter: React.FC = () => {
     return (
         <SidebarFooterDiv>
             <div style={{ fontSize: "0.8em", padding: "0.3em 0.3em 0 0.3em", color: "rgb(140, 140, 140)", lineHeight: "1em" }}>
-                武蔵高等学校中学校校友会の規約類を管理するシステムです。Lawtextフォーマットを使用しています。
+                武蔵高等学校中学校校友会の規約類を閲覧するシステムです。Lawtextフォーマットを使用しています。
             </div>
             <div style={{ fontSize: "0.8em", textAlign: "center", padding: "0.3em 0", color: "rgb(140, 140, 140)" }}>
                 <span style={{ marginRight: "1em" }}>
