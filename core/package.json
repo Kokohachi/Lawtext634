@@ -23,9 +23,11 @@
   "scripts": {
     "emitBinDeclarations": "tsc -p bin/build/tsconfig.json",
     "build": "node --trace-deprecation --trace-warnings bin/build/ && tsc",
+    "build:safe": "(node --trace-deprecation --trace-warnings bin/build/ || true) && (tsc || true)",
     "watch": "node --trace-deprecation --trace-warnings bin/build/ && tsc --watch",
     "build-bundles": "webpack --mode=development --config ./webpack-configs/bundles.js",
     "build-bundles:prod": "webpack --mode=production --config ./webpack-configs/bundles.js",
+    "prepare": "rm -rf ./dist && npm run build:safe",
     "lawtext": "node ./dist/src/main.js",
     "test": "node --max_old_space_size=8192 ./dist/test/prepareTest.js && npx mocha"
   },
