@@ -1,4 +1,3 @@
-import type { LawInfo } from "lawtext/dist/src/data/lawinfo";
 import { storedLoader } from "./loaders";
 
 export const searchLawID = async (lawSearchKey: string): Promise<string | {error: string, message: string} | null> => {
