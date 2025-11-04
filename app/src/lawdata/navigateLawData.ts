@@ -9,6 +9,9 @@ import { lawNumLikeToLawNum, ptnLawNumLike } from "lawtext/dist/src/law/lawNum";
 import parsePath from "lawtext/dist/src/path/v1/parse";
 import { parseLawIDOrLawRevID } from "lawtext/dist/src/law/lawID";
 
+// Regex pattern to detect XML format (XML declaration or Law element)
+const XML_FORMAT_REGEX = /^(?:<\?xml|<Law)/;
+
 export const navigateLawData = async (
     pathStr: string,
     onMessage: (message: string) => unknown,
@@ -19,7 +22,7 @@ export const navigateLawData = async (
 
     const text = getTempLaw(firstPart);
     if (text !== null) {
-        if (/^(?:<\?xml|<Law)/.test(text.trim())) {
+        if (XML_FORMAT_REGEX.test(text.trim())) {
             onMessage("法令XMLをパースしています...");
             // console.log("navigateLawData: parsing law xml...");
             await util.wait(30);
@@ -125,7 +128,7 @@ export const navigateLawData = async (
         const isLawtextFile = lawInfo.XmlName.endsWith(".law.txt");
         const text = lawXMLStruct.xml;
         
-        if (isLawtextFile || !/^(?:<\?xml|<Law)/.test(text.trim())) {
+        if (isLawtextFile || !XML_FORMAT_REGEX.test(text.trim())) {
             onMessage("Lawtextをパースしています...");
             // console.log("navigateLawData: parsing lawtext...");
             await util.wait(30);

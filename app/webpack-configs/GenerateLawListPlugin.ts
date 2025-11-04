@@ -84,9 +84,10 @@ export default class GenerateLawListPlugin {
                         
                         // Generate a unique ID based on filename using base64-like encoding
                         // We need to create a valid ID that doesn't break the path parser
+                        const base64UrlMap: Record<string, string> = { '+': '-', '/': '_', '=': '' };
                         const lawId = Buffer.from(filename.replace(".law.txt", ""))
                             .toString("base64")
-                            .replace(/[+/=]/g, (c) => ({ '+': '-', '/': '_', '=': '' }[c] || c));
+                            .replace(/[+/=]/g, (c) => base64UrlMap[c] || c);
                         
                         return {
                             LawID: lawId,
