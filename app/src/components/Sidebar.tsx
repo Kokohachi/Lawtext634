@@ -41,6 +41,9 @@ const SidebarHead: React.FC<LawtextAppPageStateStruct> = props => {
             borderRadius: 0,
             borderBottomLeftRadius: ".25rem",
         },
+        onSelect: (lawID: string) => {
+            navigate(`/${lawID}`);
+        },
     });
 
     const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -87,7 +90,7 @@ const SidebarHead: React.FC<LawtextAppPageStateStruct> = props => {
                             style={{ fontSize: "0.8em", padding: 0 }}
                             onSubmit={handleSearchSubmit}
                         >
-                            <div className="input-group input-group-sm">
+                            <div className="input-group input-group-sm" style={{ position: "relative" }}>
                                 {searchInput}
                                 <button
                                     className="btn btn-secondary"
