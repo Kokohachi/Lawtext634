@@ -42,11 +42,15 @@ export const pdfToPNG = async (pdfData: ArrayBuffer) => {
             background: "white",
         }).promise;
 
-        const buf = (
+        const bufData = (
             ("convertToBlob" in canvas)
                 ? await (await canvas.convertToBlob()).arrayBuffer()
                 : canvas.toBuffer()
         );
+        
+        const buf = (bufData instanceof ArrayBuffer)
+            ? bufData
+            : bufData.buffer.slice(bufData.byteOffset, bufData.byteOffset + bufData.byteLength) as ArrayBuffer;
 
         pngs.push({
             buf,
@@ -72,11 +76,14 @@ export interface FigDataManagerOptions {
 }
 
 export class FigDataManager implements DOCXFigDataManager {
-    pdfIcon = {
-        rId: "rPdfIcon",
-        buf: decodeBase64(pdfIconBinaryBase64),
-        fileName: "pdfIcon.emf",
-    };
+    pdfIcon = (() => {
+        const uint8Data = decodeBase64(pdfIconBinaryBase64);
+        return {
+            rId: "rPdfIcon",
+            buf: uint8Data.buffer.slice(uint8Data.byteOffset, uint8Data.byteOffset + uint8Data.byteLength) as ArrayBuffer,
+            fileName: "pdfIcon.emf",
+        };
+    })();
     constructor(
         public figDataMap: Map<string, DOCXFigData>,
     ) { }
