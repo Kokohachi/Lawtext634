@@ -34,6 +34,8 @@ const SidebarHead: React.FC<LawtextAppPageStateStruct> = props => {
         editingKey,
         searchInput,
         searchDropdown,
+        modeToggle,
+        searchMode,
     } = useSearchInput({
         searchInputStyle: {
             border: "none",
@@ -44,11 +46,26 @@ const SidebarHead: React.FC<LawtextAppPageStateStruct> = props => {
         onSelect: (lawID: string) => {
             navigate(`/${lawID}`);
         },
+        onSearchSubmit: (query: string, mode: "title" | "fulltext") => {
+            if (mode === "fulltext") {
+                // Navigate to search results page for full-text search
+                navigate(`/search?q=${encodeURIComponent(query)}`);
+            } else {
+                // Navigate directly to law for title search
+                navigate(`/${query.replace("/", "")}`);
+            }
+        },
     });
 
     const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        navigate(`/${editingKey.replace("/", "")}`);
+        if (searchMode === "fulltext") {
+            // Navigate to search results page
+            navigate(`/search?q=${encodeURIComponent(editingKey)}`);
+        } else {
+            // Navigate directly to law
+            navigate(`/${editingKey.replace("/", "")}`);
+        }
     };
 
     const downloadLawtextClick = () => {
@@ -87,9 +104,10 @@ const SidebarHead: React.FC<LawtextAppPageStateStruct> = props => {
                     <div className="list-group" style={{ textAlign: "center" }}>
                         <form
                             className="list-group-item "
-                            style={{ fontSize: "0.8em", padding: 0 }}
+                            style={{ fontSize: "0.8em", padding: "0.5em" }}
                             onSubmit={handleSearchSubmit}
                         >
+                            {modeToggle}
                             <div className="input-group input-group-sm" style={{ position: "relative" }}>
                                 {searchInput}
                                 <button
