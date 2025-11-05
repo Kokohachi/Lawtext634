@@ -244,6 +244,14 @@ class FullTextSearchIndex {
             
             console.log(`Best match element: tag=${bestMatch.el.tag}, pos=${bestMatch.startPos}-${bestMatch.endPos}`);
             
+            // Exclude matches in law title/body elements (not article content)
+            // We only want matches within article content
+            const excludedTags = ["LawTitle", "LawBody", "TOC", "TOCLabel", "TOCChapter", "TOCSection", "TOCArticle", "Preamble"];
+            if (excludedTags.includes(bestMatch.el.tag)) {
+                console.warn(`Match is in excluded element: ${bestMatch.el.tag}`);
+                return {};
+            }
+            
             // Find the article that contains this element
             let articleEl: any = null;
             for (const item of positionMap) {
@@ -296,9 +304,16 @@ class FullTextSearchIndex {
                     const pNum = paragraphNum.text();
                     if (pNum && title) {
                         // Insert paragraph number after article number: "第◯条第◯項（タイトル）"
+                        // ParagraphNum might be just a number like "２" or formatted like "第二項"
                         const match = title.match(/^(第[^\s　]+条)/);
                         if (match) {
-                            title = match[1] + pNum + title.substring(match[1].length);
+                            // If pNum is just a number, format it as "第◯項"
+                            let formattedPNum = pNum;
+                            if (!pNum.startsWith("第") && !pNum.includes("項")) {
+                                // It's just a number like "２", format it
+                                formattedPNum = "第" + pNum.replace(/^\s*/, "").replace(/\s*$/, "") + "項";
+                            }
+                            title = match[1] + formattedPNum + title.substring(match[1].length);
                         }
                     }
                 }
