@@ -89,6 +89,7 @@ interface LawSuggestion {
 export const useSearchInput = (options: {
     searchInputStyle?: React.CSSProperties,
     onSelect?: (lawID: string) => void,
+    onSearchSubmit?: (query: string, mode: SearchMode) => void,
 }) => {
 
     const searchInputRef = React.useRef<HTMLInputElement>(null);

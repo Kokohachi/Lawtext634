@@ -35,6 +35,7 @@ const SidebarHead: React.FC<LawtextAppPageStateStruct> = props => {
         searchInput,
         searchDropdown,
         modeToggle,
+        searchMode,
     } = useSearchInput({
         searchInputStyle: {
             border: "none",
@@ -45,11 +46,26 @@ const SidebarHead: React.FC<LawtextAppPageStateStruct> = props => {
         onSelect: (lawID: string) => {
             navigate(`/${lawID}`);
         },
+        onSearchSubmit: (query: string, mode: "title" | "fulltext") => {
+            if (mode === "fulltext") {
+                // Navigate to search results page for full-text search
+                navigate(`/search?q=${encodeURIComponent(query)}`);
+            } else {
+                // Navigate directly to law for title search
+                navigate(`/${query.replace("/", "")}`);
+            }
+        },
     });
 
     const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        navigate(`/${editingKey.replace("/", "")}`);
+        if (searchMode === "fulltext") {
+            // Navigate to search results page
+            navigate(`/search?q=${encodeURIComponent(editingKey)}`);
+        } else {
+            // Navigate directly to law
+            navigate(`/${editingKey.replace("/", "")}`);
+        }
     };
 
     const downloadLawtextClick = () => {
