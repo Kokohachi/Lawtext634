@@ -183,17 +183,14 @@ class FullTextSearchIndex {
         return context;
     }
 
-    private findArticleForMatch(lawData: any, matchIndex: number, fullText: string): { articleTitle?: string; articlePath?: string } {
+    private findArticleForMatch(lawData: any, matchIndex: number, fullText: string): { articleTitle?: string; articlePath?: string; shouldExclude: boolean } {
         if (!lawData || !lawData.el || !lawData.analysis) {
-            console.warn("Missing lawData, el, or analysis");
-            return {};
+            return { shouldExclude: false };
         }
 
         try {
             const law = lawData.el as std.Law;
             const containers = lawData.analysis.containersByEL as Map<any, any>;
-            
-            console.log(`Finding article for match at index ${matchIndex} in text of length ${fullText.length}`);
             
             // Build a map of text positions to elements
             const buildPositionMap = (el: any, currentPos: number = 0): Array<{ el: any; startPos: number; endPos: number; text: string }> => {
@@ -221,7 +218,6 @@ class FullTextSearchIndex {
             };
 
             const positionMap = buildPositionMap(law);
-            console.log(`Built position map with ${positionMap.length} elements`);
             
             // Find the most specific element that contains the match
             let bestMatch: { el: any; startPos: number; endPos: number; text: string } | null = null;
@@ -238,40 +234,10 @@ class FullTextSearchIndex {
             }
             
             if (!bestMatch) {
-                console.warn(`No element found containing match at index ${matchIndex}`);
-                return {};
+                return { shouldExclude: false };
             }
             
-            console.log(`Best match element: tag=${bestMatch.el.tag}, pos=${bestMatch.startPos}-${bestMatch.endPos}`);
-            
-            // Exclude matches in law title/body elements (not article content)
-            // We only want matches within article content
-            // Check if any ancestor of the best match is an excluded element
-            const isInExcludedElement = (el: any): boolean => {
-                const excludedTags = ["LawTitle", "LawBody", "TOC", "TOCLabel", "TOCChapter", "TOCSection", "TOCArticle", "TOCPart", "TOCSuppl", "Preamble"];
-                
-                // Check current element
-                if (excludedTags.includes(el.tag)) {
-                    return true;
-                }
-                
-                // Check if this element is contained within any excluded element
-                for (const item of positionMap) {
-                    if (excludedTags.includes(item.el.tag) && 
-                        item.startPos <= bestMatch.startPos && 
-                        item.endPos >= bestMatch.endPos) {
-                        return true;
-                    }
-                }
-                
-                return false;
-            };
-            
-            if (isInExcludedElement(bestMatch.el)) {
-                console.warn(`Match is in excluded element or its descendant: ${bestMatch.el.tag}`);
-                return {};
-            }
-            
+            // Check if the match is within an article
             // Find the article that contains this element
             let articleEl: any = null;
             for (const item of positionMap) {
@@ -283,12 +249,10 @@ class FullTextSearchIndex {
                 }
             }
             
+            // If not in an article, exclude this match
             if (!articleEl) {
-                console.warn("Could not find parent article");
-                return {};
+                return { shouldExclude: true };
             }
-            
-            console.log(`Found article element`);
             
             // Build the article title: "第◯条（タイトル）"
             const articleTitle = articleEl.children.find((c: any) => c.tag === "ArticleTitle");
@@ -339,8 +303,6 @@ class FullTextSearchIndex {
                 }
             }
             
-            console.log(`Article title: ${title}`);
-            
             // Use the most specific element's container for the path
             const container = containers.get(bestMatch.el);
             const path = container ? makePath(container) : undefined;
@@ -348,17 +310,16 @@ class FullTextSearchIndex {
             // If we couldn't get a path from the specific element, use the article
             const finalPath = path || (containers.get(articleEl) ? makePath(containers.get(articleEl)) : undefined);
             
-            console.log(`Final path: ${finalPath}`);
-            
             return {
                 articleTitle: title || undefined,
-                articlePath: finalPath
+                articlePath: finalPath,
+                shouldExclude: false
             };
         } catch (error) {
             console.error("Error finding article for match:", error);
         }
 
-        return {};
+        return { shouldExclude: false };
     }
 
     search(query: string, maxResults: number = 10): SearchResult[] {
@@ -428,21 +389,23 @@ class FullTextSearchIndex {
                 const context = this.getMatchContext(law.fullText, index);
                 
                 if (!law.lawData) {
-                    console.warn(`Law ${law.LawID} has no lawData, cannot detect articles`);
-                    matches.push({ 
-                        text: matchText, 
-                        context,
-                        articleTitle: undefined,
-                        articlePath: undefined
-                    });
+                    // Skip matches without lawData - we can't verify they're in articles
+                    index = textLower.indexOf(searchLower, index + 1);
+                    continue;
                 } else {
                     const articleInfo = this.findArticleForMatch(law.lawData, index, law.fullText);
-                    console.log(`Article info for ${law.LawID} at index ${index}:`, articleInfo);
+                    
+                    // Skip matches that should be excluded (not in articles)
+                    if (articleInfo.shouldExclude) {
+                        index = textLower.indexOf(searchLower, index + 1);
+                        continue;
+                    }
                     
                     matches.push({ 
                         text: matchText, 
                         context,
-                        ...articleInfo
+                        articleTitle: articleInfo.articleTitle,
+                        articlePath: articleInfo.articlePath
                     });
                 }
                 index = textLower.indexOf(searchLower, index + 1);
