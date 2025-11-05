@@ -1,6 +1,5 @@
 import { storedLoader } from "./loaders";
 import { BaseLawInfo } from "lawtext/dist/src/data/lawinfo";
-import path from "path";
 
 export interface SearchResult {
     LawID: string;
@@ -25,11 +24,14 @@ class FullTextSearchIndex {
     private async loadLawtextFile(lawInfo: BaseLawInfo): Promise<string> {
         try {
             // Try to load the .law.txt file directly
-            const lawtextPath = path.join(
+            // Use URL construction for browser environment
+            const pathParts = [
                 storedLoader.lawdataPath,
                 lawInfo.Path || "",
                 lawInfo.XmlName.replace(/\.xml$/i, ".law.txt")
-            );
+            ].filter(part => part.length > 0);
+            
+            const lawtextPath = pathParts.join("/");
             
             const response = await fetch(lawtextPath);
             if (!response.ok) {
@@ -82,7 +84,7 @@ class FullTextSearchIndex {
         return this.loadPromise;
     }
 
-    private getMatchContext(text: string, matchIndex: number, contextLength: number = 50): string {
+    private getMatchContext(text: string, matchIndex: number, contextLength: number = 40): string {
         const start = Math.max(0, matchIndex - contextLength);
         const end = Math.min(text.length, matchIndex + contextLength);
         
@@ -110,7 +112,7 @@ class FullTextSearchIndex {
             let index = textLower.indexOf(searchLower);
             while (index !== -1 && matches.length < 3) {
                 const matchText = law.fullText.substring(index, index + query.length);
-                const context = this.getMatchContext(law.fullText, index, 40);
+                const context = this.getMatchContext(law.fullText, index);
                 matches.push({ text: matchText, context });
                 index = textLower.indexOf(searchLower, index + 1);
             }
