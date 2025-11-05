@@ -246,9 +246,29 @@ class FullTextSearchIndex {
             
             // Exclude matches in law title/body elements (not article content)
             // We only want matches within article content
-            const excludedTags = ["LawTitle", "LawBody", "TOC", "TOCLabel", "TOCChapter", "TOCSection", "TOCArticle", "Preamble"];
-            if (excludedTags.includes(bestMatch.el.tag)) {
-                console.warn(`Match is in excluded element: ${bestMatch.el.tag}`);
+            // Check if any ancestor of the best match is an excluded element
+            const isInExcludedElement = (el: any): boolean => {
+                const excludedTags = ["LawTitle", "LawBody", "TOC", "TOCLabel", "TOCChapter", "TOCSection", "TOCArticle", "TOCPart", "TOCSuppl", "Preamble"];
+                
+                // Check current element
+                if (excludedTags.includes(el.tag)) {
+                    return true;
+                }
+                
+                // Check if this element is contained within any excluded element
+                for (const item of positionMap) {
+                    if (excludedTags.includes(item.el.tag) && 
+                        item.startPos <= bestMatch.startPos && 
+                        item.endPos >= bestMatch.endPos) {
+                        return true;
+                    }
+                }
+                
+                return false;
+            };
+            
+            if (isInExcludedElement(bestMatch.el)) {
+                console.warn(`Match is in excluded element or its descendant: ${bestMatch.el.tag}`);
                 return {};
             }
             
