@@ -34,6 +34,7 @@ const SidebarHead: React.FC<LawtextAppPageStateStruct> = props => {
         editingKey,
         searchInput,
         searchDropdown,
+        modeToggle,
     } = useSearchInput({
         searchInputStyle: {
             border: "none",
@@ -87,9 +88,10 @@ const SidebarHead: React.FC<LawtextAppPageStateStruct> = props => {
                     <div className="list-group" style={{ textAlign: "center" }}>
                         <form
                             className="list-group-item "
-                            style={{ fontSize: "0.8em", padding: 0 }}
+                            style={{ fontSize: "0.8em", padding: "0.5em" }}
                             onSubmit={handleSearchSubmit}
                         >
+                            {modeToggle}
                             <div className="input-group input-group-sm" style={{ position: "relative" }}>
                                 {searchInput}
                                 <button
