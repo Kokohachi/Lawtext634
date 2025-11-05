@@ -84,8 +84,10 @@ class FullTextSearchIndex {
                 return { fullText, lawData: null };
             }
             
-            // Extract full text from parsed structure
-            const fullText = await this.loadLawtextFile(lawInfo);
+            // Extract full text from parsed structure using the text() method
+            const fullText = typeof lawDataResult.lawData.el.text === "function" 
+                ? lawDataResult.lawData.el.text() 
+                : await this.loadLawtextFile(lawInfo);
             
             return {
                 fullText,
@@ -181,11 +183,11 @@ class FullTextSearchIndex {
             const law = lawData.el as std.Law;
             const containers = lawData.analysis.containersByEL as Map<any, any>;
             
-            // Find all articles with their text positions
-            const findArticlesWithPositions = (el: any, currentPos: number = 0): Array<{ article: any; startPos: number; endPos: number }> => {
+            // Build a map of text positions to elements
+            const buildPositionMap = (el: any, currentPos: number = 0): Array<{ el: any; startPos: number; endPos: number; text: string }> => {
                 if (!el || !el.children) return [];
                 
-                const articles: Array<{ article: any; startPos: number; endPos: number }> = [];
+                const elements: Array<{ el: any; startPos: number; endPos: number; text: string }> = [];
                 let pos = currentPos;
                 
                 for (const child of el.children) {
@@ -196,99 +198,102 @@ class FullTextSearchIndex {
                         const childStart = pos;
                         const childEnd = pos + childText.length;
                         
-                        if (std.isArticle(child)) {
-                            articles.push({ article: child, startPos: childStart, endPos: childEnd });
-                        }
+                        elements.push({ el: child, startPos: childStart, endPos: childEnd, text: childText });
                         
                         // Recursively search in children
-                        articles.push(...findArticlesWithPositions(child, pos));
+                        elements.push(...buildPositionMap(child, pos));
                         pos = childEnd;
                     }
                 }
-                return articles;
+                return elements;
             };
 
-            const articlesWithPos = findArticlesWithPositions(law);
+            const positionMap = buildPositionMap(law);
             
-            // Find the article that contains the match
-            let targetArticle: any = null;
-            for (const { article, startPos, endPos } of articlesWithPos) {
-                if (matchIndex >= startPos && matchIndex < endPos) {
-                    targetArticle = article;
-                    break;
+            // Find the most specific element that contains the match
+            // Prefer smaller elements (more specific) over larger ones
+            let bestMatch: { el: any; startPos: number; endPos: number; text: string } | null = null;
+            let bestMatchSize = Infinity;
+            
+            for (const item of positionMap) {
+                if (matchIndex >= item.startPos && matchIndex < item.endPos) {
+                    const size = item.endPos - item.startPos;
+                    if (size < bestMatchSize) {
+                        bestMatch = item;
+                        bestMatchSize = size;
+                    }
                 }
             }
             
-            // If no article found by position, use the heuristic fallback
-            if (!targetArticle && articlesWithPos.length > 0) {
-                const textPerArticle = fullText.length / Math.max(articlesWithPos.length, 1);
-                const estimatedArticleIndex = Math.floor(matchIndex / textPerArticle);
-                targetArticle = articlesWithPos[Math.min(estimatedArticleIndex, articlesWithPos.length - 1)].article;
+            if (!bestMatch) {
+                return {};
             }
             
-            if (targetArticle) {
-                const articleTitle = targetArticle.children.find((c: any) => c.tag === "ArticleTitle");
-                const articleCaption = targetArticle.children.find((c: any) => c.tag === "ArticleCaption");
-                
-                let title = "";
-                if (articleTitle && typeof articleTitle.text === "function") {
-                    title = articleTitle.text();
-                }
-                if (articleCaption && typeof articleCaption.text === "function") {
-                    const caption = articleCaption.text();
-                    title += (caption[0] === "（" ? "" : "　") + caption;
+            // Find the article that contains this element
+            let currentEl = bestMatch.el;
+            let articleEl = null;
+            
+            // Walk up the tree to find the article
+            const findParentArticle = (el: any): any => {
+                if (std.isArticle(el)) {
+                    return el;
                 }
                 
-                // Try to find more specific location (paragraph, item, etc.)
-                const container = containers.get(targetArticle);
-                let path = container ? makePath(container) : undefined;
-                
-                // Try to find the specific paragraph or item within the article
-                const findSpecificElement = (el: any, targetIndex: number): any => {
-                    if (!el || !el.children) return null;
-                    
-                    let pos = 0;
-                    for (const child of el.children) {
-                        if (typeof child === "string") {
-                            pos += child.length;
-                        } else {
-                            const childText = typeof child.text === "function" ? child.text() : "";
-                            const childStart = pos;
-                            const childEnd = pos + childText.length;
-                            
-                            if (targetIndex >= childStart && targetIndex < childEnd) {
-                                // Check if this is a paragraph, item, or subitem
-                                if (std.isParagraph(child) || (child.tag && (child.tag === "Item" || child.tag === "Subitem1" || child.tag === "Subitem2"))) {
-                                    const childContainer = containers.get(child);
-                                    if (childContainer) {
-                                        return childContainer;
-                                    }
-                                }
-                                // Recursively search deeper
-                                return findSpecificElement(child, targetIndex - childStart);
+                // Try to find the element in the position map and search its ancestors
+                for (const item of positionMap) {
+                    if (item.el === el) {
+                        // Look for an article that contains this element
+                        for (const candidate of positionMap) {
+                            if (std.isArticle(candidate.el) && 
+                                candidate.startPos <= item.startPos && 
+                                candidate.endPos >= item.endPos) {
+                                return candidate.el;
                             }
-                            pos = childEnd;
                         }
                     }
-                    return null;
-                };
-                
-                // Calculate relative match position within the article
-                const articleText = typeof targetArticle.text === "function" ? targetArticle.text() : "";
-                const articleStartInFull = fullText.indexOf(articleText);
-                if (articleStartInFull >= 0 && matchIndex >= articleStartInFull) {
-                    const relativeMatch = matchIndex - articleStartInFull;
-                    const specificContainer = findSpecificElement(targetArticle, relativeMatch);
-                    if (specificContainer) {
-                        path = makePath(specificContainer);
-                    }
                 }
-                
-                return {
-                    articleTitle: title || undefined,
-                    articlePath: path
-                };
+                return null;
+            };
+            
+            articleEl = findParentArticle(currentEl);
+            
+            if (!articleEl) {
+                // If we still can't find an article, use the best match element itself if it's useful
+                const container = containers.get(bestMatch.el);
+                if (container) {
+                    const path = makePath(container);
+                    return {
+                        articleTitle: undefined,
+                        articlePath: path
+                    };
+                }
+                return {};
             }
+            
+            // Build the article title
+            const articleTitle = articleEl.children.find((c: any) => c.tag === "ArticleTitle");
+            const articleCaption = articleEl.children.find((c: any) => c.tag === "ArticleCaption");
+            
+            let title = "";
+            if (articleTitle && typeof articleTitle.text === "function") {
+                title = articleTitle.text();
+            }
+            if (articleCaption && typeof articleCaption.text === "function") {
+                const caption = articleCaption.text();
+                title += (caption[0] === "（" ? "" : "　") + caption;
+            }
+            
+            // Use the most specific element's container for the path
+            const container = containers.get(bestMatch.el);
+            const path = container ? makePath(container) : undefined;
+            
+            // If we couldn't get a path from the specific element, use the article
+            const finalPath = path || (containers.get(articleEl) ? makePath(containers.get(articleEl)) : undefined);
+            
+            return {
+                articleTitle: title || undefined,
+                articlePath: finalPath
+            };
         } catch (error) {
             console.error("Error finding article for match:", error);
         }
