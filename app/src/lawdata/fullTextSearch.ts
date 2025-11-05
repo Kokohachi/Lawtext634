@@ -360,7 +360,7 @@ class FullTextSearchIndex {
         return results;
     }
 
-    async searchWithArticles(query: string, maxResults: number = 50): Promise<SearchResultWithArticle[]> {
+    async searchWithArticles(query: string, maxResults: number = 100, maxMatchesPerLaw: number = 50): Promise<SearchResultWithArticle[]> {
         if (query.trim().length === 0) {
             return [];
         }
@@ -384,7 +384,7 @@ class FullTextSearchIndex {
             const matches: Array<{ text: string; context: string; articleTitle?: string; articlePath?: string }> = [];
             
             let index = textLower.indexOf(searchLower);
-            while (index !== -1 && matches.length < 5) {
+            while (index !== -1 && matches.length < maxMatchesPerLaw) {
                 const matchText = law.fullText.substring(index, index + query.length);
                 const context = this.getMatchContext(law.fullText, index);
                 
