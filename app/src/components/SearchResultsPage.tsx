@@ -50,6 +50,33 @@ const LawTitleBar = styled.div`
     color: #333;
     background: #f8f9fa;
     border-bottom: 1px solid #ddd;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+    
+    &:hover {
+        background: #e9ecef;
+    }
+`;
+
+const MatchCount = styled.span`
+    font-size: 0.9rem;
+    font-weight: normal;
+    color: #666;
+`;
+
+const ExpandIcon = styled.span<{ $isExpanded: boolean }>`
+    font-size: 0.8rem;
+    transition: transform 0.2s ease;
+    transform: ${props => props.$isExpanded ? 'rotate(90deg)' : 'rotate(0deg)'};
+`;
+
+const MatchesContainer = styled.div<{ $isExpanded: boolean }>`
+    max-height: ${props => props.$isExpanded ? 'none' : '0'};
+    overflow: hidden;
+    transition: max-height 0.3s ease;
 `;
 
 const MatchItem = styled.div`
@@ -114,6 +141,7 @@ export const SearchResultsPage: React.FC = () => {
     
     const [results, setResults] = React.useState<SearchResultWithArticle[]>([]);
     const [isLoading, setIsLoading] = React.useState(true);
+    const [expandedLaws, setExpandedLaws] = React.useState<Set<number>>(new Set());
 
     React.useEffect(() => {
         const performSearch = async () => {
@@ -125,13 +153,27 @@ export const SearchResultsPage: React.FC = () => {
 
             setIsLoading(true);
             await fullTextSearchIndex.ensureLoaded();
-            const searchResults = await fullTextSearchIndex.searchWithArticles(query, 50);
+            const searchResults = await fullTextSearchIndex.searchWithArticles(query);
             setResults(searchResults);
+            // Expand all laws by default
+            setExpandedLaws(new Set(searchResults.map((_, i) => i)));
             setIsLoading(false);
         };
 
         performSearch();
     }, [query]);
+
+    const toggleLawExpansion = (index: number) => {
+        setExpandedLaws(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(index)) {
+                newSet.delete(index);
+            } else {
+                newSet.add(index);
+            }
+            return newSet;
+        });
+    };
 
     const highlightMatch = (context: string, query: string): React.ReactNode => {
         const lowerContext = context.toLowerCase();
@@ -168,6 +210,10 @@ export const SearchResultsPage: React.FC = () => {
         navigate(url);
     };
 
+    const getTotalMatches = () => {
+        return results.reduce((sum, result) => sum + result.matches.length, 0);
+    };
+
     return (
         <PageContainer>
             <Header>
@@ -177,7 +223,7 @@ export const SearchResultsPage: React.FC = () => {
                 {!isLoading && (
                     <ResultCount>
                         {results.length > 0 
-                            ? `${results.length}件の規約類で見つかりました`
+                            ? `${results.length}件の規約類で${getTotalMatches()}個の一致が見つかりました`
                             : "結果が見つかりませんでした"
                         }
                     </ResultCount>
@@ -190,24 +236,35 @@ export const SearchResultsPage: React.FC = () => {
                 <NoResults>「{query}」に一致する結果が見つかりませんでした</NoResults>
             ) : (
                 <ResultsList>
-                    {results.map((result, resultIndex) => (
-                        <LawSection key={resultIndex}>
-                            <LawTitleBar>{result.LawTitle}</LawTitleBar>
-                            {result.matches.map((match, matchIndex) => (
-                                <MatchItem 
-                                    key={matchIndex}
-                                    onClick={() => handleMatchClick(result.LawID, match.articlePath)}
-                                >
-                                    <ArticleInfo>
-                                        {match.articleTitle || "（該当箇所）"}
-                                    </ArticleInfo>
-                                    <MatchContext>
-                                        {highlightMatch(match.context, query)}
-                                    </MatchContext>
-                                </MatchItem>
-                            ))}
-                        </LawSection>
-                    ))}
+                    {results.map((result, resultIndex) => {
+                        const isExpanded = expandedLaws.has(resultIndex);
+                        return (
+                            <LawSection key={resultIndex}>
+                                <LawTitleBar onClick={() => toggleLawExpansion(resultIndex)}>
+                                    <div>
+                                        <ExpandIcon $isExpanded={isExpanded}>▶</ExpandIcon>{" "}
+                                        {result.LawTitle}
+                                    </div>
+                                    <MatchCount>{result.matches.length}件</MatchCount>
+                                </LawTitleBar>
+                                <MatchesContainer $isExpanded={isExpanded}>
+                                    {result.matches.map((match, matchIndex) => (
+                                        <MatchItem 
+                                            key={matchIndex}
+                                            onClick={() => handleMatchClick(result.LawID, match.articlePath)}
+                                        >
+                                            <ArticleInfo>
+                                                {match.articleTitle || "（該当箇所）"}
+                                            </ArticleInfo>
+                                            <MatchContext>
+                                                {highlightMatch(match.context, query)}
+                                            </MatchContext>
+                                        </MatchItem>
+                                    ))}
+                                </MatchesContainer>
+                            </LawSection>
+                        );
+                    })}
                 </ResultsList>
             )}
         </PageContainer>
