@@ -245,72 +245,96 @@ class FullTextSearchIndex {
             
             console.log(`Best match element: tag=${bestMatch.el.tag}, pos=${bestMatch.startPos}-${bestMatch.endPos}`);
             
-            // Find the article that contains this element
-            let currentEl = bestMatch.el;
-            let articleEl = null;
+            // Helper function to extract title from an element
+            const extractTitle = (el: any): string => {
+                if (!el || !el.children) return "";
+                
+                let title = "";
+                
+                // Look for title elements based on the element type
+                const titleTags = [
+                    "ArticleTitle", "ArticleCaption",
+                    "ChapterTitle", "ChapterCaption",
+                    "SectionTitle", "SectionCaption", 
+                    "SubsectionTitle", "SubsectionCaption",
+                    "DivisionTitle", "DivisionCaption",
+                    "PartTitle", "PartCaption",
+                    "ItemTitle", "ItemSentence",
+                    "Subitem1Title", "Subitem1Sentence",
+                    "Subitem2Title", "Subitem2Sentence"
+                ];
+                
+                for (const child of el.children) {
+                    if (typeof child !== "string" && titleTags.includes(child.tag)) {
+                        if (typeof child.text === "function") {
+                            const childText = child.text();
+                            if (child.tag.includes("Title") || child.tag.includes("Sentence")) {
+                                title += childText;
+                            } else if (child.tag.includes("Caption")) {
+                                // Add caption with proper spacing
+                                if (childText.startsWith("（")) {
+                                    title += childText;
+                                } else {
+                                    title += "　" + childText;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                return title.trim();
+            };
             
-            // Walk up the tree to find the article
-            const findParentArticle = (el: any): any => {
-                if (std.isArticle(el)) {
+            // Find the most relevant structural element (Article, Chapter, Section, etc.)
+            // Priority: Article > Item > Paragraph > Section > Subsection > Chapter
+            const findRelevantElement = (el: any): any => {
+                const structuralTags = [
+                    "Article", "Item", "Subitem1", "Subitem2", "Paragraph",
+                    "Section", "Subsection", "Division", "Chapter", "Part"
+                ];
+                
+                if (structuralTags.includes(el.tag)) {
                     return el;
                 }
                 
-                // Try to find the element in the position map and search its ancestors
+                // Search for the closest structural ancestor
                 for (const item of positionMap) {
                     if (item.el === el) {
-                        // Look for an article that contains this element
+                        // Look for structural elements that contain this element
+                        let bestStructural: any = null;
+                        let bestStructuralSize = Infinity;
+                        
                         for (const candidate of positionMap) {
-                            if (std.isArticle(candidate.el) && 
+                            if (structuralTags.includes(candidate.el.tag) && 
                                 candidate.startPos <= item.startPos && 
                                 candidate.endPos >= item.endPos) {
-                                return candidate.el;
+                                const size = candidate.endPos - candidate.startPos;
+                                if (size < bestStructuralSize) {
+                                    bestStructural = candidate.el;
+                                    bestStructuralSize = size;
+                                }
                             }
                         }
+                        
+                        return bestStructural;
                     }
                 }
                 return null;
             };
             
-            articleEl = findParentArticle(currentEl);
+            const relevantEl = findRelevantElement(bestMatch.el) || bestMatch.el;
+            console.log(`Found relevant element: ${relevantEl.tag}`);
             
-            if (!articleEl) {
-                console.warn("Could not find parent article");
-                // If we still can't find an article, use the best match element itself if it's useful
-                const container = containers.get(bestMatch.el);
-                if (container) {
-                    const path = makePath(container);
-                    console.log(`Using best match element path: ${path}`);
-                    return {
-                        articleTitle: undefined,
-                        articlePath: path
-                    };
-                }
-                return {};
-            }
-            
-            console.log(`Found article element: ${articleEl.tag}`);
-            
-            // Build the article title
-            const articleTitle = articleEl.children.find((c: any) => c.tag === "ArticleTitle");
-            const articleCaption = articleEl.children.find((c: any) => c.tag === "ArticleCaption");
-            
-            let title = "";
-            if (articleTitle && typeof articleTitle.text === "function") {
-                title = articleTitle.text();
-            }
-            if (articleCaption && typeof articleCaption.text === "function") {
-                const caption = articleCaption.text();
-                title += (caption[0] === "（" ? "" : "　") + caption;
-            }
-            
-            console.log(`Article title: ${title}`);
+            // Extract title from the relevant element
+            let title = extractTitle(relevantEl);
+            console.log(`Extracted title: ${title}`);
             
             // Use the most specific element's container for the path
             const container = containers.get(bestMatch.el);
             const path = container ? makePath(container) : undefined;
             
-            // If we couldn't get a path from the specific element, use the article
-            const finalPath = path || (containers.get(articleEl) ? makePath(containers.get(articleEl)) : undefined);
+            // If we couldn't get a path from the specific element, try the relevant element
+            const finalPath = path || (containers.get(relevantEl) ? makePath(containers.get(relevantEl)) : undefined);
             
             console.log(`Final path: ${finalPath}`);
             
