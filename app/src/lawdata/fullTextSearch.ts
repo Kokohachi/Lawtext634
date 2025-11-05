@@ -176,12 +176,15 @@ class FullTextSearchIndex {
 
     private findArticleForMatch(lawData: any, matchIndex: number, fullText: string): { articleTitle?: string; articlePath?: string } {
         if (!lawData || !lawData.el || !lawData.analysis) {
+            console.warn("Missing lawData, el, or analysis");
             return {};
         }
 
         try {
             const law = lawData.el as std.Law;
             const containers = lawData.analysis.containersByEL as Map<any, any>;
+            
+            console.log(`Finding article for match at index ${matchIndex} in text of length ${fullText.length}`);
             
             // Build a map of text positions to elements
             const buildPositionMap = (el: any, currentPos: number = 0): Array<{ el: any; startPos: number; endPos: number; text: string }> => {
@@ -209,6 +212,7 @@ class FullTextSearchIndex {
             };
 
             const positionMap = buildPositionMap(law);
+            console.log(`Built position map with ${positionMap.length} elements`);
             
             // Find the most specific element that contains the match
             // Prefer smaller elements (more specific) over larger ones
@@ -226,8 +230,11 @@ class FullTextSearchIndex {
             }
             
             if (!bestMatch) {
+                console.warn(`No element found containing match at index ${matchIndex}`);
                 return {};
             }
+            
+            console.log(`Best match element: tag=${bestMatch.el.tag}, pos=${bestMatch.startPos}-${bestMatch.endPos}`);
             
             // Find the article that contains this element
             let currentEl = bestMatch.el;
@@ -258,10 +265,12 @@ class FullTextSearchIndex {
             articleEl = findParentArticle(currentEl);
             
             if (!articleEl) {
+                console.warn("Could not find parent article");
                 // If we still can't find an article, use the best match element itself if it's useful
                 const container = containers.get(bestMatch.el);
                 if (container) {
                     const path = makePath(container);
+                    console.log(`Using best match element path: ${path}`);
                     return {
                         articleTitle: undefined,
                         articlePath: path
@@ -269,6 +278,8 @@ class FullTextSearchIndex {
                 }
                 return {};
             }
+            
+            console.log(`Found article element: ${articleEl.tag}`);
             
             // Build the article title
             const articleTitle = articleEl.children.find((c: any) => c.tag === "ArticleTitle");
@@ -283,12 +294,16 @@ class FullTextSearchIndex {
                 title += (caption[0] === "（" ? "" : "　") + caption;
             }
             
+            console.log(`Article title: ${title}`);
+            
             // Use the most specific element's container for the path
             const container = containers.get(bestMatch.el);
             const path = container ? makePath(container) : undefined;
             
             // If we couldn't get a path from the specific element, use the article
             const finalPath = path || (containers.get(articleEl) ? makePath(containers.get(articleEl)) : undefined);
+            
+            console.log(`Final path: ${finalPath}`);
             
             return {
                 articleTitle: title || undefined,
@@ -346,6 +361,7 @@ class FullTextSearchIndex {
 
         await this.ensureDetailedCacheLoaded();
         if (!this.detailedCache) {
+            console.error("Detailed cache is null");
             return [];
         }
 
@@ -353,7 +369,10 @@ class FullTextSearchIndex {
         const results: SearchResultWithArticle[] = [];
 
         for (const law of this.detailedCache) {
-            if (!law.fullText) continue;
+            if (!law.fullText) {
+                console.warn(`Law ${law.LawID} has no fullText`);
+                continue;
+            }
             
             const textLower = law.fullText.toLowerCase();
             const matches: Array<{ text: string; context: string; articleTitle?: string; articlePath?: string }> = [];
@@ -362,13 +381,25 @@ class FullTextSearchIndex {
             while (index !== -1 && matches.length < 5) {
                 const matchText = law.fullText.substring(index, index + query.length);
                 const context = this.getMatchContext(law.fullText, index);
-                const articleInfo = this.findArticleForMatch(law.lawData, index, law.fullText);
                 
-                matches.push({ 
-                    text: matchText, 
-                    context,
-                    ...articleInfo
-                });
+                if (!law.lawData) {
+                    console.warn(`Law ${law.LawID} has no lawData, cannot detect articles`);
+                    matches.push({ 
+                        text: matchText, 
+                        context,
+                        articleTitle: undefined,
+                        articlePath: undefined
+                    });
+                } else {
+                    const articleInfo = this.findArticleForMatch(law.lawData, index, law.fullText);
+                    console.log(`Article info for ${law.LawID} at index ${index}:`, articleInfo);
+                    
+                    matches.push({ 
+                        text: matchText, 
+                        context,
+                        ...articleInfo
+                    });
+                }
                 index = textLower.indexOf(searchLower, index + 1);
             }
 
