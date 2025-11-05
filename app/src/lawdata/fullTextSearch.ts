@@ -71,23 +71,32 @@ class FullTextSearchIndex {
 
     private async loadLawData(lawInfo: BaseLawInfo): Promise<{ fullText: string; lawData: any }> {
         try {
-            const lawXML = await storedLoader.loadLawXMLStructByInfo(lawInfo);
+            // Load the .law.txt file
+            const lawtextContent = await this.loadLawtextFile(lawInfo);
+            
+            if (!lawtextContent) {
+                console.warn(`No lawtext content for ${lawInfo.LawID}`);
+                return { fullText: "", lawData: null };
+            }
+            
+            // Parse the lawtext directly
             const timing = new Timing();
             const lawDataResult = await toLawData({
-                source: "file_xml",
-                xml: lawXML.xml,
-                lawXMLStruct: lawXML,
+                source: "file_lawtext",
+                lawtext: lawtextContent,
             }, () => {}, timing);
             
             if (!lawDataResult.ok || !lawDataResult.lawData) {
-                const fullText = await this.loadLawtextFile(lawInfo);
-                return { fullText, lawData: null };
+                console.warn(`Failed to parse lawtext for ${lawInfo.LawID}:`, lawDataResult);
+                return { fullText: lawtextContent, lawData: null };
             }
             
             // Extract full text from parsed structure using the text() method
             const fullText = typeof lawDataResult.lawData.el.text === "function" 
                 ? lawDataResult.lawData.el.text() 
-                : await this.loadLawtextFile(lawInfo);
+                : lawtextContent;
+            
+            console.log(`Successfully loaded lawData for ${lawInfo.LawID}, text length: ${fullText.length}`);
             
             return {
                 fullText,
