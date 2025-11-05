@@ -33,49 +33,48 @@ const ResultCount = styled.div`
 const ResultsList = styled.div`
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 2rem;
 `;
 
-const ResultCard = styled.div`
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 1.5rem;
+const LawSection = styled.div`
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 0;
     background: white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    
-    &:hover {
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
 `;
 
-const LawTitle = styled.h2`
-    font-size: 1.3rem;
-    margin-bottom: 1rem;
-    color: #2c3e50;
+const LawTitleBar = styled.div`
+    font-size: 1.2rem;
+    font-weight: bold;
+    padding: 1rem 1.5rem;
+    color: #333;
+    background: #f8f9fa;
+    border-bottom: 1px solid #ddd;
 `;
 
 const MatchItem = styled.div`
-    margin-bottom: 0.8rem;
-    padding: 0.8rem;
-    background: #f8f9fa;
-    border-left: 3px solid #007bff;
-    border-radius: 4px;
-`;
-
-const ArticleLink = styled.a`
-    color: #007bff;
-    text-decoration: none;
-    font-weight: 500;
-    margin-bottom: 0.5rem;
-    display: block;
+    padding: 1rem 1.5rem;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    
+    &:last-child {
+        border-bottom: none;
+    }
     
     &:hover {
-        text-decoration: underline;
+        background: #f8f9fa;
     }
 `;
 
-const MatchContext = styled.div`
+const ArticleInfo = styled.div`
     font-size: 0.95rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: #333;
+`;
+
+const MatchContext = styled.div`
+    font-size: 0.9rem;
     color: #555;
     line-height: 1.6;
     
@@ -164,6 +163,11 @@ export const SearchResultsPage: React.FC = () => {
         return <>{parts}</>;
     };
 
+    const handleMatchClick = (lawID: string, articlePath?: string) => {
+        const url = articlePath ? `/${lawID}/${articlePath}` : `/${lawID}`;
+        navigate(url);
+    };
+
     return (
         <PageContainer>
             <Header>
@@ -187,25 +191,22 @@ export const SearchResultsPage: React.FC = () => {
             ) : (
                 <ResultsList>
                     {results.map((result, resultIndex) => (
-                        <ResultCard key={resultIndex}>
-                            <LawTitle>{result.LawTitle}</LawTitle>
+                        <LawSection key={resultIndex}>
+                            <LawTitleBar>{result.LawTitle}</LawTitleBar>
                             {result.matches.map((match, matchIndex) => (
-                                <MatchItem key={matchIndex}>
-                                    <ArticleLink 
-                                        href={`#/${result.LawID}${match.articlePath ? `/${match.articlePath}` : ''}`}
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            navigate(`/${result.LawID}${match.articlePath ? `/${match.articlePath}` : ''}`);
-                                        }}
-                                    >
-                                        {match.articleTitle || "該当箇所"}へ
-                                    </ArticleLink>
+                                <MatchItem 
+                                    key={matchIndex}
+                                    onClick={() => handleMatchClick(result.LawID, match.articlePath)}
+                                >
+                                    <ArticleInfo>
+                                        {match.articleTitle || "（該当箇所）"}
+                                    </ArticleInfo>
                                     <MatchContext>
                                         {highlightMatch(match.context, query)}
                                     </MatchContext>
                                 </MatchItem>
                             ))}
-                        </ResultCard>
+                        </LawSection>
                     ))}
                 </ResultsList>
             )}

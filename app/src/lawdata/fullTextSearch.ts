@@ -181,28 +181,50 @@ class FullTextSearchIndex {
             const law = lawData.el as std.Law;
             const containers = lawData.analysis.containersByEL as Map<any, any>;
             
-            // Find all articles
-            const findArticles = (el: any): any[] => {
+            // Find all articles with their text positions
+            const findArticlesWithPositions = (el: any, currentPos: number = 0): Array<{ article: any; startPos: number; endPos: number }> => {
                 if (!el || !el.children) return [];
                 
-                const articles: any[] = [];
+                const articles: Array<{ article: any; startPos: number; endPos: number }> = [];
+                let pos = currentPos;
+                
                 for (const child of el.children) {
-                    if (typeof child !== "string") {
+                    if (typeof child === "string") {
+                        pos += child.length;
+                    } else {
+                        const childText = typeof child.text === "function" ? child.text() : "";
+                        const childStart = pos;
+                        const childEnd = pos + childText.length;
+                        
                         if (std.isArticle(child)) {
-                            articles.push(child);
+                            articles.push({ article: child, startPos: childStart, endPos: childEnd });
                         }
-                        articles.push(...findArticles(child));
+                        
+                        // Recursively search in children
+                        articles.push(...findArticlesWithPositions(child, pos));
+                        pos = childEnd;
                     }
                 }
                 return articles;
             };
 
-            const articles = findArticles(law);
+            const articlesWithPos = findArticlesWithPositions(law);
             
-            // Simple heuristic: estimate position in text by dividing text into sections
-            const textPerArticle = fullText.length / Math.max(articles.length, 1);
-            const estimatedArticleIndex = Math.floor(matchIndex / textPerArticle);
-            const targetArticle = articles[Math.min(estimatedArticleIndex, articles.length - 1)];
+            // Find the article that contains the match
+            let targetArticle: any = null;
+            for (const { article, startPos, endPos } of articlesWithPos) {
+                if (matchIndex >= startPos && matchIndex < endPos) {
+                    targetArticle = article;
+                    break;
+                }
+            }
+            
+            // If no article found by position, use the heuristic fallback
+            if (!targetArticle && articlesWithPos.length > 0) {
+                const textPerArticle = fullText.length / Math.max(articlesWithPos.length, 1);
+                const estimatedArticleIndex = Math.floor(matchIndex / textPerArticle);
+                targetArticle = articlesWithPos[Math.min(estimatedArticleIndex, articlesWithPos.length - 1)].article;
+            }
             
             if (targetArticle) {
                 const articleTitle = targetArticle.children.find((c: any) => c.tag === "ArticleTitle");
@@ -217,8 +239,50 @@ class FullTextSearchIndex {
                     title += (caption[0] === "（" ? "" : "　") + caption;
                 }
                 
+                // Try to find more specific location (paragraph, item, etc.)
                 const container = containers.get(targetArticle);
-                const path = container ? makePath(container) : undefined;
+                let path = container ? makePath(container) : undefined;
+                
+                // Try to find the specific paragraph or item within the article
+                const findSpecificElement = (el: any, targetIndex: number): any => {
+                    if (!el || !el.children) return null;
+                    
+                    let pos = 0;
+                    for (const child of el.children) {
+                        if (typeof child === "string") {
+                            pos += child.length;
+                        } else {
+                            const childText = typeof child.text === "function" ? child.text() : "";
+                            const childStart = pos;
+                            const childEnd = pos + childText.length;
+                            
+                            if (targetIndex >= childStart && targetIndex < childEnd) {
+                                // Check if this is a paragraph, item, or subitem
+                                if (std.isParagraph(child) || (child.tag && (child.tag === "Item" || child.tag === "Subitem1" || child.tag === "Subitem2"))) {
+                                    const childContainer = containers.get(child);
+                                    if (childContainer) {
+                                        return childContainer;
+                                    }
+                                }
+                                // Recursively search deeper
+                                return findSpecificElement(child, targetIndex - childStart);
+                            }
+                            pos = childEnd;
+                        }
+                    }
+                    return null;
+                };
+                
+                // Calculate relative match position within the article
+                const articleText = typeof targetArticle.text === "function" ? targetArticle.text() : "";
+                const articleStartInFull = fullText.indexOf(articleText);
+                if (articleStartInFull >= 0 && matchIndex >= articleStartInFull) {
+                    const relativeMatch = matchIndex - articleStartInFull;
+                    const specificContainer = findSpecificElement(targetArticle, relativeMatch);
+                    if (specificContainer) {
+                        path = makePath(specificContainer);
+                    }
+                }
                 
                 return {
                     articleTitle: title || undefined,
