@@ -152,12 +152,16 @@ const LawDataComponent: React.FC<{
 
         const loadVersions = async () => {
             const title = getLawTitle();
+            console.log('[VersionControl] Law title:', title);
             if (title) {
                 const baseName = extractBaseName(title);
+                console.log('[VersionControl] Base name:', baseName);
                 const versions = await getRegulationVersions(baseName);
+                console.log('[VersionControl] Loaded versions:', versions);
                 if (versions && versions.versions.length > 0) {
                     setRegulationVersions(versions);
                     setShowVersionControl(versions.versions.length > 1);
+                    console.log('[VersionControl] Show control:', versions.versions.length > 1);
                 }
             }
         };
