@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState, useEffect } from "react";
 import styled, { createGlobalStyle } from "styled-components";
 import { HTMLLaw } from "lawtext/dist/src/renderer/rules/law";
 import type { LawtextAppPageStateStruct, OrigSetLawtextAppPageState } from "../LawtextAppPageState";
@@ -15,6 +15,9 @@ import locatePath from "lawtext/dist/src/path/v1/locate";
 import { scrollToLawAnchor } from "../../actions/scroll";
 import { HTMLParagraphItemMenuCSS } from "./controls/WrapHTMLParagraphItem";
 import { HTMLToplevelAndArticlesMenuCSS } from "./controls/WrapHTMLToplevelAndArticles";
+import { VersionControlPanel } from "../VersionControlPanel";
+import { extractBaseName, getRegulationVersions } from "@appsrc/lawdata/versionsLoader";
+import type { RegulationVersions } from "@appsrc/lawdata/versions";
 
 
 const GlobalStyle = createGlobalStyle`
@@ -124,6 +127,43 @@ const LawDataComponent: React.FC<{
     const { lawData, onError, origSetState, firstPart } = props;
 
     const { addAfterMountTask } = useAfterMountTasks(origSetState);
+    
+    const [regulationVersions, setRegulationVersions] = useState<RegulationVersions | null>(null);
+    const [showVersionControl, setShowVersionControl] = useState(false);
+
+    useEffect(() => {
+        // Try to get the law title from the lawData
+        const getLawTitle = () => {
+            // Find LawBody child
+            const lawBody = lawData.el.children.find(c => typeof c !== 'string' && c.tag === "LawBody");
+            if (lawBody && typeof lawBody !== 'string') {
+                // Find LawTitle within LawBody
+                const lawTitle = lawBody.children.find(c => typeof c !== 'string' && c.tag === "LawTitle");
+                if (lawTitle && typeof lawTitle !== 'string' && lawTitle.children.length > 0) {
+                    // Extract text from children
+                    const text = lawTitle.children
+                        .filter(c => typeof c === 'string')
+                        .join('');
+                    return text || null;
+                }
+            }
+            return null;
+        };
+
+        const loadVersions = async () => {
+            const title = getLawTitle();
+            if (title) {
+                const baseName = extractBaseName(title);
+                const versions = await getRegulationVersions(baseName);
+                if (versions && versions.versions.length > 0) {
+                    setRegulationVersions(versions);
+                    setShowVersionControl(versions.versions.length > 1);
+                }
+            }
+        };
+
+        loadVersions();
+    }, [lawData]);
 
     const getFigData = useCallback((src: string) => {
         return lawData.pictURL.get(src) ?? null;
@@ -143,9 +183,16 @@ const LawDataComponent: React.FC<{
         options,
     };
 
-    return <HTMLLaw
-        el={lawData.el}
-        indent={0}
-        {...{ htmlOptions }}
-    />;
+    return (
+        <>
+            {showVersionControl && regulationVersions && (
+                <VersionControlPanel regulation={regulationVersions} />
+            )}
+            <HTMLLaw
+                el={lawData.el}
+                indent={0}
+                {...{ htmlOptions }}
+            />
+        </>
+    );
 };
