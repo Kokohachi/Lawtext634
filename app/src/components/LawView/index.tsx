@@ -134,35 +134,44 @@ const LawDataComponent: React.FC<{
     useEffect(() => {
         // Try to get the law title from the lawData
         const getLawTitle = () => {
-            // Find LawBody child
-            const lawBody = lawData.el.children.find(c => typeof c !== 'string' && c.tag === "LawBody");
-            if (lawBody && typeof lawBody !== 'string') {
-                // Find LawTitle within LawBody
-                const lawTitle = lawBody.children.find(c => typeof c !== 'string' && c.tag === "LawTitle");
-                if (lawTitle && typeof lawTitle !== 'string' && lawTitle.children.length > 0) {
-                    // Extract text from children
-                    const text = lawTitle.children
-                        .filter(c => typeof c === 'string')
-                        .join('');
-                    return text || null;
+            try {
+                // Find LawBody child
+                const lawBody = lawData.el.children.find(c => typeof c !== 'string' && c.tag === "LawBody");
+                if (lawBody && typeof lawBody !== 'string') {
+                    // Find LawTitle within LawBody
+                    const lawTitle = lawBody.children.find(c => typeof c !== 'string' && c.tag === "LawTitle");
+                    if (lawTitle && typeof lawTitle !== 'string' && lawTitle.children.length > 0) {
+                        // Extract text from children
+                        const text = lawTitle.children
+                            .filter(c => typeof c === 'string')
+                            .join('');
+                        return text || null;
+                    }
                 }
+            } catch (error) {
+                console.error('[VersionControl] Error extracting law title:', error);
             }
             return null;
         };
 
         const loadVersions = async () => {
-            const title = getLawTitle();
-            console.log('[VersionControl] Law title:', title);
-            if (title) {
-                const baseName = extractBaseName(title);
-                console.log('[VersionControl] Base name:', baseName);
-                const versions = await getRegulationVersions(baseName);
-                console.log('[VersionControl] Loaded versions:', versions);
-                if (versions && versions.versions.length > 0) {
-                    setRegulationVersions(versions);
-                    setShowVersionControl(versions.versions.length > 1);
-                    console.log('[VersionControl] Show control:', versions.versions.length > 1);
+            try {
+                const title = getLawTitle();
+                console.log('[VersionControl] Law title:', title);
+                if (title) {
+                    const baseName = extractBaseName(title);
+                    console.log('[VersionControl] Base name:', baseName);
+                    const versions = await getRegulationVersions(baseName);
+                    console.log('[VersionControl] Loaded versions:', versions);
+                    if (versions && versions.versions.length > 0) {
+                        setRegulationVersions(versions);
+                        setShowVersionControl(versions.versions.length > 1);
+                        console.log('[VersionControl] Show control:', versions.versions.length > 1);
+                    }
                 }
+            } catch (error) {
+                console.error('[VersionControl] Error loading versions:', error);
+                // Don't break the app if version loading fails
             }
         };
 
