@@ -18,6 +18,7 @@ import { HTMLToplevelAndArticlesMenuCSS } from "./controls/WrapHTMLToplevelAndAr
 import { VersionControlPanel } from "../VersionControlPanel";
 import { extractBaseName, getRegulationVersions } from "@appsrc/lawdata/versionsLoader";
 import type { RegulationVersions } from "@appsrc/lawdata/versions";
+import * as std from "lawtext/dist/src/law/std";
 
 
 const GlobalStyle = createGlobalStyle`
@@ -135,19 +136,9 @@ const LawDataComponent: React.FC<{
         // Try to get the law title from the lawData
         const getLawTitle = () => {
             try {
-                // Find LawBody child
-                const lawBody = lawData.el.children.find(c => typeof c !== 'string' && c.tag === "LawBody");
-                if (lawBody && typeof lawBody !== 'string') {
-                    // Find LawTitle within LawBody
-                    const lawTitle = lawBody.children.find(c => typeof c !== 'string' && c.tag === "LawTitle");
-                    if (lawTitle && typeof lawTitle !== 'string' && lawTitle.children.length > 0) {
-                        // Extract text from children
-                        const text = lawTitle.children
-                            .filter(c => typeof c === 'string')
-                            .join('');
-                        return text || null;
-                    }
-                }
+                // Use the same approach as Sidebar.tsx to extract law title
+                const title = lawData.el.children.find(std.isLawBody)?.children.find(std.isLawTitle)?.text() ?? null;
+                return title;
             } catch (error) {
                 console.error('[VersionControl] Error extracting law title:', error);
             }
