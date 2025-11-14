@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState, useEffect } from "react";
 import styled, { createGlobalStyle } from "styled-components";
 import { HTMLLaw } from "lawtext/dist/src/renderer/rules/law";
 import type { LawtextAppPageStateStruct, OrigSetLawtextAppPageState } from "../LawtextAppPageState";
@@ -15,6 +15,10 @@ import locatePath from "lawtext/dist/src/path/v1/locate";
 import { scrollToLawAnchor } from "../../actions/scroll";
 import { HTMLParagraphItemMenuCSS } from "./controls/WrapHTMLParagraphItem";
 import { HTMLToplevelAndArticlesMenuCSS } from "./controls/WrapHTMLToplevelAndArticles";
+import { VersionControlPanel } from "../VersionControlPanel";
+import { extractBaseName, getRegulationVersions } from "@appsrc/lawdata/versionsLoader";
+import type { RegulationVersions } from "@appsrc/lawdata/versions";
+import * as std from "lawtext/dist/src/law/std";
 
 
 const GlobalStyle = createGlobalStyle`
@@ -97,7 +101,7 @@ export const LawView: React.FC<LawtextAppPageStateStruct> = props => {
             {origState.hasError && <LawViewError {...props} />}
             {origState.law &&
             // (origState.navigatedPath === props.path) &&
-                <MemoLawDataComponent lawData={origState.law} onError={onError} origSetState={origSetState} firstPart={firstPart} />
+                <MemoLawDataComponent lawData={origState.law} onError={onError} origSetState={origSetState} firstPart={firstPart} navigate={props.navigate} />
             }
         </LawViewDiv>
     );
@@ -120,10 +124,51 @@ const LawDataComponent: React.FC<{
     onError: (error: Error) => unknown,
     origSetState: OrigSetLawtextAppPageState,
     firstPart: string,
+    navigate: ReturnType<typeof import('react-router-dom').useNavigate>,
 }> = props => {
-    const { lawData, onError, origSetState, firstPart } = props;
+    const { lawData, onError, origSetState, firstPart, navigate } = props;
 
     const { addAfterMountTask } = useAfterMountTasks(origSetState);
+    
+    const [regulationVersions, setRegulationVersions] = useState<RegulationVersions | null>(null);
+    const [showVersionControl, setShowVersionControl] = useState(false);
+
+    useEffect(() => {
+        // Try to get the law title from the lawData
+        const getLawTitle = () => {
+            try {
+                // Use the same approach as Sidebar.tsx to extract law title
+                const title = lawData.el.children.find(std.isLawBody)?.children.find(std.isLawTitle)?.text() ?? null;
+                return title;
+            } catch (error) {
+                console.error('[VersionControl] Error extracting law title:', error);
+            }
+            return null;
+        };
+
+        const loadVersions = async () => {
+            try {
+                const title = getLawTitle();
+                console.log('[VersionControl] Law title:', title);
+                if (title) {
+                    const baseName = extractBaseName(title);
+                    console.log('[VersionControl] Base name:', baseName);
+                    const versions = await getRegulationVersions(baseName);
+                    console.log('[VersionControl] Loaded versions:', versions);
+                    if (versions && versions.versions.length > 0) {
+                        setRegulationVersions(versions);
+                        setShowVersionControl(versions.versions.length > 1);
+                        console.log('[VersionControl] Show control:', versions.versions.length > 1);
+                    }
+                }
+            } catch (error) {
+                console.error('[VersionControl] Error loading versions:', error);
+                // Don't break the app if version loading fails
+            }
+        };
+
+        loadVersions();
+    }, [lawData]);
 
     const getFigData = useCallback((src: string) => {
         return lawData.pictURL.get(src) ?? null;
@@ -143,9 +188,16 @@ const LawDataComponent: React.FC<{
         options,
     };
 
-    return <HTMLLaw
-        el={lawData.el}
-        indent={0}
-        {...{ htmlOptions }}
-    />;
+    return (
+        <>
+            {showVersionControl && regulationVersions && (
+                <VersionControlPanel regulation={regulationVersions} navigate={navigate} />
+            )}
+            <HTMLLaw
+                el={lawData.el}
+                indent={0}
+                {...{ htmlOptions }}
+            />
+        </>
+    );
 };
