@@ -67,21 +67,6 @@ const VersionSelect = styled.select`
     }
 `;
 
-const ErrorMessage = styled.div`
-    padding: 12px;
-    background-color: #ffebe9;
-    color: #cf222e;
-    border: 1px solid #ff818266;
-    border-radius: 6px;
-    margin: 12px 0;
-`;
-
-const LoadingMessage = styled.div`
-    padding: 12px;
-    text-align: center;
-    color: #57606a;
-`;
-
 interface VersionControlPanelProps {
     regulation: RegulationVersions;
     currentVersionId?: string;
@@ -99,8 +84,6 @@ export const VersionControlPanel: React.FC<VersionControlPanelProps> = ({
     const [compareNewVersion, setCompareNewVersion] = useState<Version | null>(null);
     const [oldText, setOldText] = useState<string>("");
     const [newText, setNewText] = useState<string>("");
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
 
     const currentVersion = regulation.versions.find(v => v.status === 'current') || regulation.versions[0];
 
@@ -131,8 +114,6 @@ export const VersionControlPanel: React.FC<VersionControlPanelProps> = ({
     };
 
     const handleCompareVersions = async (oldVersion: Version, newVersion: Version) => {
-        setLoading(true);
-        setError(null);
         try {
             const [oldContent, newContent] = await Promise.all([
                 loadVersionText(oldVersion),
@@ -144,9 +125,8 @@ export const VersionControlPanel: React.FC<VersionControlPanelProps> = ({
             setCompareNewVersion(newVersion);
             // Stay on history tab to show the comparison
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'バージョンの読み込みに失敗しました');
-        } finally {
-            setLoading(false);
+            console.error('Failed to load versions for comparison:', err);
+            alert(err instanceof Error ? err.message : 'バージョンの読み込みに失敗しました');
         }
     };
 
@@ -163,11 +143,6 @@ export const VersionControlPanel: React.FC<VersionControlPanelProps> = ({
                 .replace(/=/g, '');
             navigate(`/${lawId}`);
         }
-    };
-
-    const handleManualCompare = async () => {
-        if (!compareOldVersion || !compareNewVersion) return;
-        await handleCompareVersions(compareOldVersion, compareNewVersion);
     };
 
     return (
