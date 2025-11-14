@@ -63,6 +63,15 @@ export default class GenerateLawListPlugin {
                 
                 console.log(`Generating law list from ${lawFiles.length} .law.txt files...`);
                 
+                // Load versions.json to filter only current versions
+                const versionsJsonPath = path.join(dataDir, "versions.json");
+                let versionsData: any = null;
+                if (existsSync(versionsJsonPath)) {
+                    const versionsContent = await fs.readFile(versionsJsonPath, "utf-8");
+                    versionsData = JSON.parse(versionsContent);
+                    console.log(`Loaded versions.json with ${Object.keys(versionsData).length} regulation(s)`);
+                }
+                
                 // Parse each law file to extract metadata
                 const lawInfos = await Promise.all(
                     lawFiles.map(async (filename) => {
@@ -101,8 +110,31 @@ export default class GenerateLawListPlugin {
                     })
                 );
                 
+                // Filter to show only current versions if versions.json exists
+                let filteredLawInfos = lawInfos;
+                if (versionsData) {
+                    filteredLawInfos = lawInfos.filter(info => {
+                        // Extract base name by removing year/number info
+                        const baseName = info.LawTitle.replace(/[（(]令和.+?[）)]/g, '').trim();
+                        
+                        // Check if this regulation has version info
+                        const regulationVersions = versionsData[baseName];
+                        if (regulationVersions && regulationVersions.versions) {
+                            // Only include if this is the current version
+                            const currentVersion = regulationVersions.versions.find((v: any) => v.status === 'current');
+                            if (currentVersion) {
+                                // Check if this file matches the current version
+                                return info.filename === currentVersion.filename;
+                            }
+                        }
+                        // If no version info exists, include the file (single version regulation)
+                        return true;
+                    });
+                    console.log(`Filtered to ${filteredLawInfos.length} current version(s) from ${lawInfos.length} total files`);
+                }
+                
                 // Sort by title for consistent ordering
-                lawInfos.sort((a, b) => a.LawTitle.localeCompare(b.LawTitle, "ja"));
+                filteredLawInfos.sort((a, b) => a.LawTitle.localeCompare(b.LawTitle, "ja"));
                 
                 // Generate list.json
                 const listJson = {
@@ -116,7 +148,7 @@ export default class GenerateLawListPlugin {
                         "ReferencingLawNums",
                         "ReferencedLawNums",
                     ],
-                    body: lawInfos.map(info => [
+                    body: filteredLawInfos.map(info => [
                         info.LawID,
                         info.LawNum,
                         info.LawTitle,
@@ -133,7 +165,7 @@ export default class GenerateLawListPlugin {
                 
                 // Generate all_law_list.csv
                 const csvHeader = "法令ID,法令番号,法令名,未施行,本文URL";
-                const csvRows = lawInfos.map(info => {
+                const csvRows = filteredLawInfos.map(info => {
                     const fields = [
                         info.LawID,
                         info.LawNum,
@@ -148,7 +180,7 @@ export default class GenerateLawListPlugin {
                 await fs.writeFile(listCsvPath, csvContent, "utf-8");
                 console.log(`Generated ${listCsvPath}`);
                 
-                console.log(`Successfully generated law list with ${lawInfos.length} entries`);
+                console.log(`Successfully generated law list with ${filteredLawInfos.length} entries`);
                 
             } catch (error) {
                 console.error(`Error in GenerateLawListPlugin: ${error}`);

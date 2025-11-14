@@ -85,13 +85,15 @@ const LoadingMessage = styled.div`
 interface VersionControlPanelProps {
     regulation: RegulationVersions;
     currentVersionId?: string;
+    navigate: (path: string) => void;
 }
 
 export const VersionControlPanel: React.FC<VersionControlPanelProps> = ({
     regulation,
     currentVersionId,
+    navigate,
 }) => {
-    const [activeTab, setActiveTab] = useState<'current' | 'history' | 'compare'>('current');
+    const [activeTab, setActiveTab] = useState<'current' | 'history'>('current');
     const [selectedVersion, setSelectedVersion] = useState<Version | null>(null);
     const [compareOldVersion, setCompareOldVersion] = useState<Version | null>(null);
     const [compareNewVersion, setCompareNewVersion] = useState<Version | null>(null);
@@ -140,7 +142,7 @@ export const VersionControlPanel: React.FC<VersionControlPanelProps> = ({
             setNewText(newContent);
             setCompareOldVersion(oldVersion);
             setCompareNewVersion(newVersion);
-            setActiveTab('compare');
+            // Stay on history tab to show the comparison
         } catch (err) {
             setError(err instanceof Error ? err.message : 'バージョンの読み込みに失敗しました');
         } finally {
@@ -153,6 +155,13 @@ export const VersionControlPanel: React.FC<VersionControlPanelProps> = ({
         const version = regulation.versions.find(v => v.id === versionId);
         if (version) {
             setSelectedVersion(version);
+            // Navigate to the selected version's file
+            const lawId = Buffer.from(version.filename.replace(".law.txt", ""))
+                .toString("base64")
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=/g, '');
+            navigate(`/${lawId}`);
         }
     };
 
@@ -174,13 +183,7 @@ export const VersionControlPanel: React.FC<VersionControlPanelProps> = ({
                     $active={activeTab === 'history'}
                     onClick={() => setActiveTab('history')}
                 >
-                    改正履歴
-                </Tab>
-                <Tab
-                    $active={activeTab === 'compare'}
-                    onClick={() => setActiveTab('compare')}
-                >
-                    比較
+                    改正履歴・比較
                 </Tab>
             </TabContainer>
             <TabContent>
@@ -209,70 +212,15 @@ export const VersionControlPanel: React.FC<VersionControlPanelProps> = ({
                     </div>
                 )}
                 {activeTab === 'history' && (
-                    <VersionHistoryViewer
-                        regulation={regulation}
-                        onVersionSelect={setSelectedVersion}
-                        onCompareVersions={handleCompareVersions}
-                    />
-                )}
-                {activeTab === 'compare' && (
-                    <div>
-                        {loading && <LoadingMessage>読み込み中...</LoadingMessage>}
-                        {error && <ErrorMessage>{error}</ErrorMessage>}
-                        {!compareOldVersion || !compareNewVersion ? (
-                            <div>
-                                <VersionSelector>
-                                    <VersionSelectorLabel>旧版を選択:</VersionSelectorLabel>
-                                    <VersionSelect
-                                        value={compareOldVersion?.id || ''}
-                                        onChange={(e) => {
-                                            const version = regulation.versions.find(v => v.id === e.target.value);
-                                            setCompareOldVersion(version || null);
-                                        }}
-                                    >
-                                        <option value="">-- 選択してください --</option>
-                                        {regulation.versions.map(version => (
-                                            <option key={version.id} value={version.id}>
-                                                {version.title}
-                                            </option>
-                                        ))}
-                                    </VersionSelect>
-                                </VersionSelector>
-                                <VersionSelector>
-                                    <VersionSelectorLabel>新版を選択:</VersionSelectorLabel>
-                                    <VersionSelect
-                                        value={compareNewVersion?.id || ''}
-                                        onChange={(e) => {
-                                            const version = regulation.versions.find(v => v.id === e.target.value);
-                                            setCompareNewVersion(version || null);
-                                        }}
-                                    >
-                                        <option value="">-- 選択してください --</option>
-                                        {regulation.versions.map(version => (
-                                            <option key={version.id} value={version.id}>
-                                                {version.title}
-                                            </option>
-                                        ))}
-                                    </VersionSelect>
-                                </VersionSelector>
-                                <button
-                                    onClick={handleManualCompare}
-                                    disabled={!compareOldVersion || !compareNewVersion || loading}
-                                    style={{
-                                        padding: '8px 16px',
-                                        backgroundColor: '#0969da',
-                                        color: 'white',
-                                        border: 'none',
-                                        borderRadius: '6px',
-                                        cursor: 'pointer',
-                                        marginTop: '12px',
-                                    }}
-                                >
-                                    比較を表示
-                                </button>
-                            </div>
-                        ) : (
-                            <div>
+                    <>
+                        <VersionHistoryViewer
+                            regulation={regulation}
+                            onVersionSelect={setSelectedVersion}
+                            onCompareVersions={handleCompareVersions}
+                        />
+                        {compareOldVersion && compareNewVersion && oldText && newText && (
+                            <div style={{ marginTop: '20px', borderTop: '2px solid #d1d5da', paddingTop: '20px' }}>
+                                <h3 style={{ marginBottom: '16px' }}>差分表示</h3>
                                 <DiffViewer
                                     oldText={oldText}
                                     newText={newText}
@@ -296,11 +244,11 @@ export const VersionControlPanel: React.FC<VersionControlPanelProps> = ({
                                         marginTop: '12px',
                                     }}
                                 >
-                                    比較をリセット
+                                    比較を終了
                                 </button>
                             </div>
                         )}
-                    </div>
+                    </>
                 )}
             </TabContent>
         </VersionControlContainer>

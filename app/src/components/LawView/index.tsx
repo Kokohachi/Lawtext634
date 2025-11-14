@@ -101,7 +101,7 @@ export const LawView: React.FC<LawtextAppPageStateStruct> = props => {
             {origState.hasError && <LawViewError {...props} />}
             {origState.law &&
             // (origState.navigatedPath === props.path) &&
-                <MemoLawDataComponent lawData={origState.law} onError={onError} origSetState={origSetState} firstPart={firstPart} />
+                <MemoLawDataComponent lawData={origState.law} onError={onError} origSetState={origSetState} firstPart={firstPart} navigate={props.navigate} />
             }
         </LawViewDiv>
     );
@@ -124,8 +124,9 @@ const LawDataComponent: React.FC<{
     onError: (error: Error) => unknown,
     origSetState: OrigSetLawtextAppPageState,
     firstPart: string,
+    navigate: ReturnType<typeof import('react-router-dom').useNavigate>,
 }> = props => {
-    const { lawData, onError, origSetState, firstPart } = props;
+    const { lawData, onError, origSetState, firstPart, navigate } = props;
 
     const { addAfterMountTask } = useAfterMountTasks(origSetState);
     
@@ -190,7 +191,7 @@ const LawDataComponent: React.FC<{
     return (
         <>
             {showVersionControl && regulationVersions && (
-                <VersionControlPanel regulation={regulationVersions} />
+                <VersionControlPanel regulation={regulationVersions} navigate={navigate} />
             )}
             <HTMLLaw
                 el={lawData.el}
