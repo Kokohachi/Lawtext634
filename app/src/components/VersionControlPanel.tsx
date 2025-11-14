@@ -136,12 +136,9 @@ export const VersionControlPanel: React.FC<VersionControlPanelProps> = ({
         if (version) {
             setSelectedVersion(version);
             // Navigate to the selected version's file
-            const lawId = Buffer.from(version.filename.replace(".law.txt", ""))
-                .toString("base64")
-                .replace(/\+/g, '-')
-                .replace(/\//g, '_')
-                .replace(/=/g, '');
-            navigate(`/${lawId}`);
+            // Use the title (filename without .law.txt extension) as the navigation path
+            const lawId = version.filename.replace(".law.txt", "");
+            navigate(`/${encodeURIComponent(lawId)}`);
         }
     };
 
