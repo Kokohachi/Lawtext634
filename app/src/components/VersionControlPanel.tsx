@@ -5,25 +5,27 @@ import { VersionHistoryViewer } from "./VersionHistoryViewer";
 import { DiffViewer } from "./DiffViewer";
 
 const VersionControlContainer = styled.div`
-    margin: 20px 0;
+    margin: 8px 0;
     background-color: #ffffff;
     border: 1px solid #d1d5da;
-    border-radius: 6px;
+    border-radius: 4px;
+    font-size: 13px;
 `;
 
 const TabContainer = styled.div`
     display: flex;
     border-bottom: 1px solid #d1d5da;
     background-color: #f6f8fa;
-    border-radius: 6px 6px 0 0;
+    border-radius: 4px 4px 0 0;
 `;
 
 const Tab = styled.button<{ $active: boolean }>`
-    padding: 12px 24px;
+    padding: 6px 12px;
     border: none;
     background-color: ${props => props.$active ? '#ffffff' : 'transparent'};
     color: ${props => props.$active ? '#24292f' : '#57606a'};
     font-weight: ${props => props.$active ? '600' : '400'};
+    font-size: 12px;
     cursor: pointer;
     border-bottom: ${props => props.$active ? '2px solid #0969da' : '2px solid transparent'};
     transition: all 0.2s;
@@ -34,37 +36,40 @@ const Tab = styled.button<{ $active: boolean }>`
 `;
 
 const TabContent = styled.div`
-    padding: 20px;
+    padding: 8px 12px;
 `;
 
 const VersionSelector = styled.div`
-    margin-bottom: 16px;
-    padding: 12px;
-    background-color: #f6f8fa;
-    border: 1px solid #d1d5da;
-    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 `;
 
-const VersionSelectorLabel = styled.div`
+const VersionSelectorLabel = styled.span`
     font-weight: 600;
-    margin-bottom: 8px;
-    font-size: 14px;
+    font-size: 12px;
+    white-space: nowrap;
 `;
 
 const VersionSelect = styled.select`
-    width: 100%;
-    padding: 8px 12px;
+    flex: 1;
+    padding: 4px 8px;
     border: 1px solid #d1d5da;
-    border-radius: 6px;
-    font-size: 14px;
+    border-radius: 4px;
+    font-size: 12px;
     background-color: #ffffff;
     cursor: pointer;
     
     &:focus {
         outline: none;
         border-color: #0969da;
-        box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.1);
     }
+`;
+
+const VersionInfo = styled.span`
+    font-size: 11px;
+    color: #57606a;
+    margin-left: 8px;
 `;
 
 interface VersionControlPanelProps {
@@ -159,28 +164,24 @@ export const VersionControlPanel: React.FC<VersionControlPanelProps> = ({
             </TabContainer>
             <TabContent>
                 {activeTab === 'current' && (
-                    <div>
-                        <VersionSelector>
-                            <VersionSelectorLabel>表示するバージョン:</VersionSelectorLabel>
-                            <VersionSelect
-                                value={selectedVersion?.id || ''}
-                                onChange={handleVersionChange}
-                            >
-                                {regulation.versions.map(version => (
-                                    <option key={version.id} value={version.id}>
-                                        {version.title} ({version.status === 'current' ? '現行' : version.date})
-                                    </option>
-                                ))}
-                            </VersionSelect>
-                        </VersionSelector>
+                    <VersionSelector>
+                        <VersionSelectorLabel>バージョン:</VersionSelectorLabel>
+                        <VersionSelect
+                            value={selectedVersion?.id || ''}
+                            onChange={handleVersionChange}
+                        >
+                            {regulation.versions.map(version => (
+                                <option key={version.id} value={version.id}>
+                                    {version.title} ({version.status === 'current' ? '現行' : version.date})
+                                </option>
+                            ))}
+                        </VersionSelect>
                         {selectedVersion && (
-                            <div>
-                                <h3>{selectedVersion.title}</h3>
-                                <p>制定日: {selectedVersion.date}</p>
-                                <p>状態: {selectedVersion.status === 'current' ? '現行' : selectedVersion.status === 'superseded' ? '改正済' : '廃止'}</p>
-                            </div>
+                            <VersionInfo>
+                                {selectedVersion.status === 'current' ? '現行版' : selectedVersion.status === 'superseded' ? '改正済' : '廃止'} - {selectedVersion.date}
+                            </VersionInfo>
                         )}
-                    </div>
+                    </VersionSelector>
                 )}
                 {activeTab === 'history' && (
                     <>
@@ -190,8 +191,8 @@ export const VersionControlPanel: React.FC<VersionControlPanelProps> = ({
                             onCompareVersions={handleCompareVersions}
                         />
                         {compareOldVersion && compareNewVersion && oldText && newText && (
-                            <div style={{ marginTop: '20px', borderTop: '2px solid #d1d5da', paddingTop: '20px' }}>
-                                <h3 style={{ marginBottom: '16px' }}>差分表示</h3>
+                            <div style={{ marginTop: '12px', borderTop: '1px solid #d1d5da', paddingTop: '12px' }}>
+                                <div style={{ marginBottom: '8px', fontWeight: '600', fontSize: '13px' }}>差分表示</div>
                                 <DiffViewer
                                     oldText={oldText}
                                     newText={newText}
@@ -206,13 +207,14 @@ export const VersionControlPanel: React.FC<VersionControlPanelProps> = ({
                                         setNewText("");
                                     }}
                                     style={{
-                                        padding: '8px 16px',
+                                        padding: '4px 12px',
                                         backgroundColor: '#57606a',
                                         color: 'white',
                                         border: 'none',
-                                        borderRadius: '6px',
+                                        borderRadius: '4px',
                                         cursor: 'pointer',
-                                        marginTop: '12px',
+                                        marginTop: '8px',
+                                        fontSize: '12px',
                                     }}
                                 >
                                     比較を終了

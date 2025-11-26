@@ -6,29 +6,29 @@ import { getVersionsSortedByDate } from "../lawdata/versions";
 const VersionHistoryContainer = styled.div`
     background-color: #ffffff;
     border: 1px solid #d1d5da;
-    border-radius: 6px;
+    border-radius: 4px;
     overflow: hidden;
 `;
 
 const VersionHistoryHeader = styled.div`
-    padding: 16px;
+    padding: 8px 12px;
     background-color: #f6f8fa;
     border-bottom: 1px solid #d1d5da;
     font-weight: 600;
-    font-size: 16px;
+    font-size: 13px;
 `;
 
 const VersionList = styled.div`
-    max-height: 400px;
+    max-height: 200px;
     overflow-y: auto;
 `;
 
 const VersionItem = styled.div<{ $isSelected: boolean; $isCurrent: boolean }>`
-    padding: 12px 16px;
+    padding: 8px 12px;
     border-bottom: 1px solid #f0f0f0;
     cursor: pointer;
     background-color: ${props => props.$isSelected ? '#e6f2ff' : '#ffffff'};
-    border-left: ${props => props.$isCurrent ? '4px solid #0969da' : '4px solid transparent'};
+    border-left: ${props => props.$isCurrent ? '3px solid #0969da' : '3px solid transparent'};
     
     &:hover {
         background-color: ${props => props.$isSelected ? '#d0e8ff' : '#f6f8fa'};
@@ -41,16 +41,17 @@ const VersionItem = styled.div<{ $isSelected: boolean; $isCurrent: boolean }>`
 
 const VersionTitle = styled.div`
     font-weight: 600;
-    margin-bottom: 4px;
+    font-size: 12px;
+    margin-bottom: 2px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 `;
 
 const VersionBadge = styled.span<{ $status: string }>`
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 12px;
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-size: 10px;
     font-weight: 600;
     background-color: ${props => {
         switch (props.$status) {
@@ -71,31 +72,30 @@ const VersionBadge = styled.span<{ $status: string }>`
 `;
 
 const VersionDate = styled.div`
-    font-size: 13px;
+    font-size: 11px;
     color: #57606a;
-    margin-bottom: 4px;
 `;
 
 const VersionAmendments = styled.div`
-    font-size: 13px;
+    font-size: 11px;
     color: #57606a;
-    margin-top: 8px;
+    margin-top: 4px;
 `;
 
 const AmendmentItem = styled.div`
-    padding: 4px 0;
-    font-size: 12px;
+    padding: 2px 0;
+    font-size: 10px;
 `;
 
 const CompareButton = styled.button`
-    margin: 16px;
-    padding: 8px 16px;
+    margin: 8px 12px;
+    padding: 4px 12px;
     background-color: #0969da;
     color: white;
     border: none;
-    border-radius: 6px;
+    border-radius: 4px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 600;
     
     &:hover {
@@ -109,10 +109,10 @@ const CompareButton = styled.button`
 `;
 
 const CompareSelection = styled.div`
-    padding: 12px 16px;
+    padding: 8px 12px;
     background-color: #f6f8fa;
     border-top: 1px solid #d1d5da;
-    font-size: 13px;
+    font-size: 11px;
     color: #57606a;
 `;
 
