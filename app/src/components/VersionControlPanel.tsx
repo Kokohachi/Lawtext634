@@ -135,10 +135,9 @@ export const VersionControlPanel: React.FC<VersionControlPanelProps> = ({
         const version = regulation.versions.find(v => v.id === versionId);
         if (version) {
             setSelectedVersion(version);
-            // Navigate to the selected version's file
-            // Use the title (filename without .law.txt extension) as the navigation path
-            const lawId = version.filename.replace(".law.txt", "");
-            navigate(`/${encodeURIComponent(lawId)}`);
+            // Note: We don't navigate here because old versions are not in the law list
+            // (sidebar only shows current versions for cleaner UX)
+            // Users can compare versions in the "改正履歴・比較" tab
         }
     };
 
