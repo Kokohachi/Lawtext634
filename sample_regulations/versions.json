@@ -1,0 +1,147 @@
+{
+  "校友会規約": {
+    "baseName": "校友会規約",
+    "versions": [
+      {
+        "id": "reiwa6",
+        "year": "令和六年",
+        "number": "規約",
+        "title": "校友会規約（令和六年規約）",
+        "filename": "校友会規約（令和六年規約）.law.txt",
+        "date": "2024-04-01",
+        "status": "superseded",
+        "amendedBy": ["校友会規約（令和七年規約）"],
+        "amendments": []
+      },
+      {
+        "id": "reiwa7",
+        "year": "令和七年",
+        "number": "規約",
+        "title": "校友会規約（令和七年規約）",
+        "filename": "校友会規約（令和七年規約）.law.txt",
+        "date": "2025-04-01",
+        "status": "current",
+        "amendedBy": [],
+        "amendments": [
+          {
+            "type": "全部改正",
+            "description": "全部改正",
+            "previousVersion": "reiwa6"
+          }
+        ]
+      }
+    ]
+  },
+  "代表委員会細則": {
+    "baseName": "代表委員会細則",
+    "versions": [
+      {
+        "id": "reiwa7_2",
+        "year": "令和七年",
+        "number": "細則第二号",
+        "title": "代表委員会細則（令和七年細則第二号）",
+        "filename": "代表委員会細則（令和七年細則第二号）.law.txt",
+        "date": "2025-04-01",
+        "status": "current",
+        "amendedBy": [],
+        "amendments": []
+      }
+    ]
+  },
+  "選挙管理委員会細則": {
+    "baseName": "選挙管理委員会細則",
+    "versions": [
+      {
+        "id": "reiwa7_4",
+        "year": "令和七年",
+        "number": "細則第四号",
+        "title": "選挙管理委員会細則（令和七年細則第四号）",
+        "filename": "選挙管理委員会細則（令和七年細則第四号）.law.txt",
+        "date": "2025-04-01",
+        "status": "current",
+        "amendedBy": [],
+        "amendments": []
+      }
+    ]
+  },
+  "図書委員会細則": {
+    "baseName": "図書委員会細則",
+    "versions": [
+      {
+        "id": "reiwa6_6",
+        "year": "令和六年",
+        "number": "細則第六号",
+        "title": "図書委員会細則（令和六年細則第六号）",
+        "filename": "図書委員会細則（令和六年細則第六号）.law.txt",
+        "date": "2024-04-01",
+        "status": "current",
+        "amendedBy": [],
+        "amendments": []
+      }
+    ]
+  },
+  "美化委員会細則": {
+    "baseName": "美化委員会細則",
+    "versions": [
+      {
+        "id": "reiwa7_7",
+        "year": "令和七年",
+        "number": "細則第七号",
+        "title": "美化委員会細則（令和七年細則第七号）",
+        "filename": "美化委員会細則（令和七年細則第七号）.law.txt",
+        "date": "2025-04-01",
+        "status": "current",
+        "amendedBy": [],
+        "amendments": []
+      }
+    ]
+  },
+  "会計細則": {
+    "baseName": "会計細則",
+    "versions": [
+      {
+        "id": "reiwa7_2_accounting",
+        "year": "令和七年",
+        "number": "細則第二号",
+        "title": "会計細則（令和七年細則第二号）",
+        "filename": "会計細則（令和七年細則第二号）.law.txt",
+        "date": "2025-04-01",
+        "status": "current",
+        "amendedBy": [],
+        "amendments": []
+      }
+    ]
+  },
+  "選挙細則": {
+    "baseName": "選挙細則",
+    "versions": [
+      {
+        "id": "reiwa7_3",
+        "year": "令和七年",
+        "number": "細則第三号",
+        "title": "選挙細則（令和七年細則第三号）",
+        "filename": "選挙細則（令和七年細則第三号）.law.txt",
+        "date": "2025-04-01",
+        "status": "current",
+        "amendedBy": [],
+        "amendments": []
+      }
+    ]
+  },
+  "生徒総会細則": {
+    "baseName": "生徒総会細則",
+    "versions": [
+      {
+        "id": "reiwa7_1",
+        "year": "令和七年",
+        "number": "細則第一号",
+        "title": "生徒総会細則（令和七年細則第一号）",
+        "filename": "生徒総会細則（令和七年細則第一号）.law.txt",
+        "date": "2025-04-01",
+        "status": "current",
+        "amendedBy": [],
+        "amendments": []
+      }
+    ]
+  }
+}

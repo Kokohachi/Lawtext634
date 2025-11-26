@@ -1,0 +1,256 @@
+import React, { useState } from "react";
+import styled from "styled-components";
+import type { RegulationVersions, Version } from "../lawdata/versions";
+import { getVersionsSortedByDate } from "../lawdata/versions";
+
+const VersionHistoryContainer = styled.div`
+    background-color: #ffffff;
+    border: 1px solid #d1d5da;
+    border-radius: 4px;
+    overflow: hidden;
+`;
+
+const VersionHistoryHeader = styled.div`
+    padding: 8px 12px;
+    background-color: #f6f8fa;
+    border-bottom: 1px solid #d1d5da;
+    font-weight: 600;
+    font-size: 13px;
+`;
+
+const VersionList = styled.div`
+    max-height: 200px;
+    overflow-y: auto;
+`;
+
+const VersionItem = styled.div<{ $isSelected: boolean; $isCurrent: boolean }>`
+    padding: 8px 12px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    background-color: ${props => props.$isSelected ? '#e6f2ff' : '#ffffff'};
+    border-left: ${props => props.$isCurrent ? '3px solid #0969da' : '3px solid transparent'};
+    
+    &:hover {
+        background-color: ${props => props.$isSelected ? '#d0e8ff' : '#f6f8fa'};
+    }
+    
+    &:last-child {
+        border-bottom: none;
+    }
+`;
+
+const VersionTitle = styled.div`
+    font-weight: 600;
+    font-size: 12px;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+`;
+
+const VersionBadge = styled.span<{ $status: string }>`
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 600;
+    background-color: ${props => {
+        switch (props.$status) {
+            case 'current': return '#ddf4ff';
+            case 'superseded': return '#fff8c5';
+            case 'abolished': return '#ffebe9';
+            case 'draft': return '#e6ffed';
+            default: return '#f6f8fa';
+        }
+    }};
+    color: ${props => {
+        switch (props.$status) {
+            case 'current': return '#0969da';
+            case 'superseded': return '#9a6700';
+            case 'abolished': return '#cf222e';
+            case 'draft': return '#1a7f37';
+            default: return '#57606a';
+        }
+    }};
+`;
+
+const VersionDate = styled.div`
+    font-size: 11px;
+    color: #57606a;
+`;
+
+const VersionAmendments = styled.div`
+    font-size: 11px;
+    color: #57606a;
+    margin-top: 4px;
+`;
+
+const AmendmentItem = styled.div`
+    padding: 2px 0;
+    font-size: 10px;
+`;
+
+const CompareButton = styled.button`
+    margin: 8px 12px;
+    padding: 4px 12px;
+    background-color: #0969da;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    
+    &:hover {
+        background-color: #0860ca;
+    }
+    
+    &:disabled {
+        background-color: #94a3b8;
+        cursor: not-allowed;
+    }
+`;
+
+const CompareSelection = styled.div`
+    padding: 8px 12px;
+    background-color: #f6f8fa;
+    border-top: 1px solid #d1d5da;
+    font-size: 11px;
+    color: #57606a;
+`;
+
+const AmendingRegulationLink = styled.button`
+    background: none;
+    border: none;
+    color: #0969da;
+    cursor: pointer;
+    font-size: 10px;
+    padding: 0;
+    text-decoration: underline;
+    
+    &:hover {
+        color: #0860ca;
+    }
+`;
+
+interface VersionHistoryViewerProps {
+    regulation: RegulationVersions;
+    onVersionSelect?: (version: Version) => void;
+    onCompareVersions?: (oldVersion: Version, newVersion: Version) => void;
+    onOpenAmendingRegulation?: (regulationName: string) => void;
+}
+
+export const VersionHistoryViewer: React.FC<VersionHistoryViewerProps> = ({
+    regulation,
+    onVersionSelect,
+    onCompareVersions,
+    onOpenAmendingRegulation,
+}) => {
+    const [selectedVersion, setSelectedVersion] = useState<Version | null>(null);
+    const [compareBaseVersion, setCompareBaseVersion] = useState<Version | null>(null);
+
+    const sortedVersions = getVersionsSortedByDate(regulation);
+
+    const handleVersionClick = (version: Version) => {
+        if (compareBaseVersion) {
+            // Second selection for comparison
+            if (compareBaseVersion.id !== version.id) {
+                const [older, newer] = compareBaseVersion.date < version.date 
+                    ? [compareBaseVersion, version]
+                    : [version, compareBaseVersion];
+                onCompareVersions?.(older, newer);
+                setCompareBaseVersion(null);
+            } else {
+                setCompareBaseVersion(null);
+            }
+        } else {
+            setSelectedVersion(version);
+            onVersionSelect?.(version);
+        }
+    };
+
+    const startCompare = () => {
+        if (selectedVersion) {
+            setCompareBaseVersion(selectedVersion);
+        }
+    };
+
+    const getStatusLabel = (status: string): string => {
+        switch (status) {
+            case 'current': return '現行';
+            case 'superseded': return '改正済';
+            case 'abolished': return '廃止';
+            case 'draft': return '改正案';
+            default: return status;
+        }
+    };
+
+    return (
+        <VersionHistoryContainer>
+            <VersionHistoryHeader>
+                改正履歴 ({regulation.baseName})
+            </VersionHistoryHeader>
+            <VersionList>
+                {sortedVersions.map((version) => (
+                    <VersionItem
+                        key={version.id}
+                        $isSelected={selectedVersion?.id === version.id || compareBaseVersion?.id === version.id}
+                        $isCurrent={version.status === 'current'}
+                        onClick={() => handleVersionClick(version)}
+                    >
+                        <VersionTitle>
+                            {version.title}
+                            <VersionBadge $status={version.status}>
+                                {getStatusLabel(version.status)}
+                            </VersionBadge>
+                        </VersionTitle>
+                        <VersionDate>
+                            制定日: {version.date}
+                        </VersionDate>
+                        {version.amendments.length > 0 && (
+                            <VersionAmendments>
+                                <strong>改正内容:</strong>
+                                {version.amendments.map((amendment, index) => (
+                                    <AmendmentItem key={index}>
+                                        • {amendment.type}: {amendment.description}
+                                    </AmendmentItem>
+                                ))}
+                            </VersionAmendments>
+                        )}
+                        {version.amendedBy.length > 0 && (
+                            <VersionAmendments>
+                                <strong>改正規約類:</strong>
+                                {version.amendedBy.map((amendingRegulation, index) => (
+                                    <AmendmentItem key={index}>
+                                        • {onOpenAmendingRegulation ? (
+                                            <AmendingRegulationLink 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    onOpenAmendingRegulation(amendingRegulation);
+                                                }}
+                                            >
+                                                {amendingRegulation}
+                                            </AmendingRegulationLink>
+                                        ) : amendingRegulation}
+                                    </AmendmentItem>
+                                ))}
+                            </VersionAmendments>
+                        )}
+                    </VersionItem>
+                ))}
+            </VersionList>
+            {selectedVersion && !compareBaseVersion && (
+                <CompareButton
+                    onClick={startCompare}
+                    disabled={sortedVersions.length < 2}
+                >
+                    他のバージョンと比較
+                </CompareButton>
+            )}
+            {compareBaseVersion && (
+                <CompareSelection>
+                    比較モード: {compareBaseVersion.title} を選択中。比較するバージョンをクリックしてください。
+                </CompareSelection>
+            )}
+        </VersionHistoryContainer>
+    );
+};

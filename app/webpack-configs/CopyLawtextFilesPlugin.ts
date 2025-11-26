@@ -23,6 +23,7 @@ export default class CopyLawtextFilesPlugin {
         compiler.hooks.afterEmit.tapPromise("CopyLawtextFilesPlugin", async () => {
             try {
                 const targetDir = path.join(compiler.outputPath, "data", "lawdata");
+                const dataDir = path.join(compiler.outputPath, "data");
                 ensureDirSync(targetDir);
                 
                 const rootDir = path.dirname(compiler.options.context || process.cwd());
@@ -54,6 +55,14 @@ export default class CopyLawtextFilesPlugin {
                     });
                 
                 await Promise.all(copyPromises);
+                
+                // Also copy versions.json if it exists
+                const versionsJsonPath = path.join(sourceDir, "versions.json");
+                if (existsSync(versionsJsonPath)) {
+                    const targetVersionsPath = path.join(dataDir, "versions.json");
+                    await fs.copyFile(versionsJsonPath, targetVersionsPath);
+                    console.log(`Copied versions.json to ${dataDir}`);
+                }
                 
                 if (copiedCount === 0) {
                     console.warn(`Warning: No .law.txt files found in ${sourceDir}`);
