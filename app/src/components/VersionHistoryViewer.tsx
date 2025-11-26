@@ -58,6 +58,7 @@ const VersionBadge = styled.span<{ $status: string }>`
             case 'current': return '#ddf4ff';
             case 'superseded': return '#fff8c5';
             case 'abolished': return '#ffebe9';
+            case 'draft': return '#e6ffed';
             default: return '#f6f8fa';
         }
     }};
@@ -66,6 +67,7 @@ const VersionBadge = styled.span<{ $status: string }>`
             case 'current': return '#0969da';
             case 'superseded': return '#9a6700';
             case 'abolished': return '#cf222e';
+            case 'draft': return '#1a7f37';
             default: return '#57606a';
         }
     }};
@@ -116,16 +118,32 @@ const CompareSelection = styled.div`
     color: #57606a;
 `;
 
+const AmendingRegulationLink = styled.button`
+    background: none;
+    border: none;
+    color: #0969da;
+    cursor: pointer;
+    font-size: 10px;
+    padding: 0;
+    text-decoration: underline;
+    
+    &:hover {
+        color: #0860ca;
+    }
+`;
+
 interface VersionHistoryViewerProps {
     regulation: RegulationVersions;
     onVersionSelect?: (version: Version) => void;
     onCompareVersions?: (oldVersion: Version, newVersion: Version) => void;
+    onOpenAmendingRegulation?: (regulationName: string) => void;
 }
 
 export const VersionHistoryViewer: React.FC<VersionHistoryViewerProps> = ({
     regulation,
     onVersionSelect,
     onCompareVersions,
+    onOpenAmendingRegulation,
 }) => {
     const [selectedVersion, setSelectedVersion] = useState<Version | null>(null);
     const [compareBaseVersion, setCompareBaseVersion] = useState<Version | null>(null);
@@ -161,6 +179,7 @@ export const VersionHistoryViewer: React.FC<VersionHistoryViewerProps> = ({
             case 'current': return '現行';
             case 'superseded': return '改正済';
             case 'abolished': return '廃止';
+            case 'draft': return '改正案';
             default: return status;
         }
     };
@@ -199,10 +218,19 @@ export const VersionHistoryViewer: React.FC<VersionHistoryViewerProps> = ({
                         )}
                         {version.amendedBy.length > 0 && (
                             <VersionAmendments>
-                                <strong>改正元:</strong>
+                                <strong>改正規約類:</strong>
                                 {version.amendedBy.map((amendingRegulation, index) => (
                                     <AmendmentItem key={index}>
-                                        • {amendingRegulation}
+                                        • {onOpenAmendingRegulation ? (
+                                            <AmendingRegulationLink 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    onOpenAmendingRegulation(amendingRegulation);
+                                                }}
+                                            >
+                                                {amendingRegulation}
+                                            </AmendingRegulationLink>
+                                        ) : amendingRegulation}
                                     </AmendmentItem>
                                 ))}
                             </VersionAmendments>

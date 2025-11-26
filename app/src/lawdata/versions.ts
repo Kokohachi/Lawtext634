@@ -16,9 +16,11 @@ export interface Version {
     title: string;
     filename: string;
     date: string;
-    status: "current" | "superseded" | "abolished";
+    status: "current" | "superseded" | "abolished" | "draft";
     amendedBy: string[];
     amendments: Amendment[];
+    /** The regulation that made this amendment (e.g., "一部改正規約類" or "全部改正規約類") */
+    amendingRegulation?: string;
 }
 
 export interface RegulationVersions {

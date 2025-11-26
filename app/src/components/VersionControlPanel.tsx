@@ -43,6 +43,7 @@ const VersionSelector = styled.div`
     display: flex;
     align-items: center;
     gap: 8px;
+    flex-wrap: wrap;
 `;
 
 const VersionSelectorLabel = styled.span`
@@ -53,6 +54,7 @@ const VersionSelectorLabel = styled.span`
 
 const VersionSelect = styled.select`
     flex: 1;
+    min-width: 200px;
     padding: 4px 8px;
     border: 1px solid #d1d5da;
     border-radius: 4px;
@@ -72,6 +74,57 @@ const VersionInfo = styled.span`
     margin-left: 8px;
 `;
 
+const ViewButton = styled.button`
+    padding: 4px 10px;
+    background-color: #0969da;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    
+    &:hover {
+        background-color: #0860ca;
+    }
+    
+    &:disabled {
+        background-color: #94a3b8;
+        cursor: not-allowed;
+    }
+`;
+
+const VersionContentContainer = styled.div`
+    margin-top: 8px;
+    padding: 8px;
+    background-color: #f6f8fa;
+    border: 1px solid #d1d5da;
+    border-radius: 4px;
+    max-height: 300px;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 11px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-break: break-all;
+`;
+
+const CloseButton = styled.button`
+    padding: 2px 8px;
+    background-color: #57606a;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 10px;
+    margin-left: 8px;
+    
+    &:hover {
+        background-color: #424a53;
+    }
+`;
+
 interface VersionControlPanelProps {
     regulation: RegulationVersions;
     currentVersionId?: string;
@@ -89,6 +142,8 @@ export const VersionControlPanel: React.FC<VersionControlPanelProps> = ({
     const [compareNewVersion, setCompareNewVersion] = useState<Version | null>(null);
     const [oldText, setOldText] = useState<string>("");
     const [newText, setNewText] = useState<string>("");
+    const [versionContent, setVersionContent] = useState<string>("");
+    const [showingVersionContent, setShowingVersionContent] = useState(false);
 
     const currentVersion = regulation.versions.find(v => v.status === 'current') || regulation.versions[0];
 
@@ -140,9 +195,38 @@ export const VersionControlPanel: React.FC<VersionControlPanelProps> = ({
         const version = regulation.versions.find(v => v.id === versionId);
         if (version) {
             setSelectedVersion(version);
-            // Note: We don't navigate here because old versions are not in the law list
-            // (sidebar only shows current versions for cleaner UX)
-            // Users can compare versions in the "改正履歴・比較" tab
+            // Reset version content display when selection changes
+            setShowingVersionContent(false);
+            setVersionContent("");
+        }
+    };
+
+    const handleViewVersion = async () => {
+        if (!selectedVersion) return;
+        
+        try {
+            const content = await loadVersionText(selectedVersion);
+            setVersionContent(content);
+            setShowingVersionContent(true);
+        } catch (err) {
+            console.error('Failed to load version:', err);
+            alert(err instanceof Error ? err.message : 'バージョンの読み込みに失敗しました');
+        }
+    };
+
+    const handleOpenAmendingRegulation = (regulationName: string) => {
+        // Navigate to the amending regulation
+        const encodedPath = encodeURIComponent(regulationName);
+        navigate(`/${encodedPath}`);
+    };
+
+    const getStatusLabel = (status: string): string => {
+        switch (status) {
+            case 'current': return '現行';
+            case 'superseded': return '改正済';
+            case 'abolished': return '廃止';
+            case 'draft': return '改正案';
+            default: return status;
         }
     };
 
@@ -153,7 +237,7 @@ export const VersionControlPanel: React.FC<VersionControlPanelProps> = ({
                     $active={activeTab === 'current'}
                     onClick={() => setActiveTab('current')}
                 >
-                    現行版
+                    バージョン選択
                 </Tab>
                 <Tab
                     $active={activeTab === 'history'}
@@ -164,24 +248,47 @@ export const VersionControlPanel: React.FC<VersionControlPanelProps> = ({
             </TabContainer>
             <TabContent>
                 {activeTab === 'current' && (
-                    <VersionSelector>
-                        <VersionSelectorLabel>バージョン:</VersionSelectorLabel>
-                        <VersionSelect
-                            value={selectedVersion?.id || ''}
-                            onChange={handleVersionChange}
-                        >
-                            {regulation.versions.map(version => (
-                                <option key={version.id} value={version.id}>
-                                    {version.title} ({version.status === 'current' ? '現行' : version.date})
-                                </option>
-                            ))}
-                        </VersionSelect>
-                        {selectedVersion && (
-                            <VersionInfo>
-                                {selectedVersion.status === 'current' ? '現行版' : selectedVersion.status === 'superseded' ? '改正済' : '廃止'} - {selectedVersion.date}
-                            </VersionInfo>
+                    <>
+                        <VersionSelector>
+                            <VersionSelectorLabel>バージョン:</VersionSelectorLabel>
+                            <VersionSelect
+                                value={selectedVersion?.id || ''}
+                                onChange={handleVersionChange}
+                            >
+                                {regulation.versions.map(version => (
+                                    <option key={version.id} value={version.id}>
+                                        {version.title} ({getStatusLabel(version.status)})
+                                    </option>
+                                ))}
+                            </VersionSelect>
+                            <ViewButton
+                                onClick={handleViewVersion}
+                                disabled={!selectedVersion}
+                            >
+                                表示
+                            </ViewButton>
+                            {selectedVersion && (
+                                <VersionInfo>
+                                    {getStatusLabel(selectedVersion.status)} - {selectedVersion.date}
+                                </VersionInfo>
+                            )}
+                        </VersionSelector>
+                        {showingVersionContent && (
+                            <div style={{ marginTop: '8px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
+                                    <span style={{ fontWeight: 600, fontSize: '12px' }}>
+                                        {selectedVersion?.title}
+                                    </span>
+                                    <CloseButton onClick={() => { setShowingVersionContent(false); setVersionContent(""); }}>
+                                        閉じる
+                                    </CloseButton>
+                                </div>
+                                <VersionContentContainer>
+                                    {versionContent}
+                                </VersionContentContainer>
+                            </div>
                         )}
-                    </VersionSelector>
+                    </>
                 )}
                 {activeTab === 'history' && (
                     <>
@@ -189,6 +296,7 @@ export const VersionControlPanel: React.FC<VersionControlPanelProps> = ({
                             regulation={regulation}
                             onVersionSelect={setSelectedVersion}
                             onCompareVersions={handleCompareVersions}
+                            onOpenAmendingRegulation={handleOpenAmendingRegulation}
                         />
                         {compareOldVersion && compareNewVersion && oldText && newText && (
                             <div style={{ marginTop: '12px', borderTop: '1px solid #d1d5da', paddingTop: '12px' }}>
